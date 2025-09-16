@@ -4,31 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediVault - Hospital Management System</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>MediSecure - Secure Medical Records</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <!-- Loading Screen -->
-    <div id="loadingScreen" class="loading-screen">
-        <div class="loading-content">
-            <div class="logo-icon">
-                <i class="fas fa-hospital-symbol"></i>
-            </div>
-            <h2>MediVault</h2>
-            <div class="loading-spinner"></div>
-            <p>Initializing secure connection...</p>
-        </div>
-    </div>
-
-    <!-- Connection Status -->
-    <div id="connectionStatus" class="connection-status hidden">
-        <i class="fas fa-wifi"></i>
-        <span>Checking connection...</span>
-    </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
     <!-- Animated Background -->
     <div class="animated-bg">
         <div class="floating-shapes">
@@ -40,38 +24,60 @@
         </div>
     </div>
 
-    <!-- Signup Section -->
-    <section id="signupSection" class="page-section hidden">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="logo-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h2>MediSecure</h2>
+            <div class="loading-spinner"></div>
+            <p>Initializing secure connection...</p>
+        </div>
+    </div>
+
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status hidden">
+        <i class="fas fa-info-circle"></i>
+        <span>Connecting...</span>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <!-- SIGNUP SECTION -->
+    <section id="signupSection" class="page-section">
         <div class="auth-container">
             <div class="auth-card">
                 <div class="auth-header">
                     <div class="logo">
                         <div class="logo-icon">
-                            <i class="fas fa-hospital-symbol"></i>
+                            <i class="fas fa-shield-alt"></i>
                         </div>
-                        <h1>MediVault</h1>
+                        <span>MediSecure</span>
                     </div>
                     <div class="auth-title">
-                        <h2>Create Hospital Account</h2>
-                        <p>Join our secure medical records network</p>
+                        <h2>Join our secure medical records network</h2>
+                        <p>Verify your hospital credentials to get started</p>
                     </div>
                 </div>
 
                 <form id="signupForm" class="auth-form">
+                    <!-- Hospital Verification -->
                     <div class="form-group">
                         <label for="hospitalId">Hospital ID</label>
                         <div class="input-container has-verify-btn">
-                            <input type="text" id="hospitalId" name="hospitalId" placeholder="Enter your Hospital ID"
+                            <input type="text" id="hospitalId" name="hospitalId" placeholder="Enter your hospital ID"
                                 required>
                             <button type="button" id="verifyBtn" class="verify-btn">
                                 <i class="fas fa-search"></i>
                                 Verify
                             </button>
                         </div>
-                        <div id="hospitalIdStatus" class="status-message"></div>
                     </div>
 
-                    <div id="hospitalDetails" class="hospital-card hidden">
+                    <!-- Hospital Information Display (Hidden initially) -->
+                    <div id="hospitalInfo" class="hospital-card hidden">
                         <div class="hospital-info">
                             <div class="hospital-icon">
                                 <i class="fas fa-hospital"></i>
@@ -85,26 +91,27 @@
                                 </div>
                                 <div class="verification-badge">
                                     <i class="fas fa-check-circle"></i>
-                                    Verified Hospital
+                                    Hospital Verified Successfully
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Password Section (Hidden until verification) -->
                     <div id="passwordSection" class="password-section hidden">
                         <div class="form-group">
-                            <label for="password">Create Password</label>
+                            <label for="password">Password</label>
                             <div class="input-container">
                                 <i class="fas fa-lock"></i>
                                 <input type="password" id="password" name="password"
                                     placeholder="Create a strong password" required>
-                                <button type="button" id="togglePassword" class="toggle-btn">
+                                <button type="button" class="toggle-btn" id="togglePassword">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </div>
                             <div class="password-strength">
-                                <div id="strengthBar" class="strength-bar"></div>
-                                <div id="strengthText" class="strength-text"></div>
+                                <div class="strength-bar" id="strengthBar"></div>
+                                <div class="strength-text" id="strengthText">Enter password to check strength</div>
                             </div>
                         </div>
 
@@ -115,11 +122,12 @@
                                 <input type="password" id="confirmPassword" name="confirmPassword"
                                     placeholder="Confirm your password" required>
                             </div>
-                            <div id="confirmPasswordStatus" class="status-message"></div>
+                            <div class="status-message" id="passwordMatch"></div>
                         </div>
 
+                        <!-- Admin Contact -->
                         <div class="form-group">
-                            <label for="adminEmail">Administrator Email</label>
+                            <label for="adminEmail">Admin Email</label>
                             <div class="input-container">
                                 <i class="fas fa-envelope"></i>
                                 <input type="email" id="adminEmail" name="adminEmail" placeholder="admin@hospital.com"
@@ -127,15 +135,24 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label for="adminPhone">Admin Phone</label>
+                            <div class="input-container">
+                                <i class="fas fa-phone"></i>
+                                <input type="tel" id="adminPhone" name="adminPhone" placeholder="+1234567890" required>
+                            </div>
+                        </div>
+
+                        <!-- Terms and Conditions -->
                         <div class="checkbox-group">
-                            <input type="checkbox" id="termsAccepted" required>
-                            <label for="termsAccepted">
-                                I agree to the <a href="#" onclick="event.preventDefault()">Terms of Service</a> and
-                                <a href="#" onclick="event.preventDefault()">Privacy Policy</a>
+                            <input type="checkbox" id="acceptTerms" name="acceptTerms" required>
+                            <label for="acceptTerms">
+                                I agree to the <a href="#" target="_blank">Terms of Service</a> and
+                                <a href="#" target="_blank">Privacy Policy</a>
                             </label>
                         </div>
 
-                        <button type="submit" id="signupBtn" class="auth-btn primary">
+                        <button type="submit" class="auth-btn primary">
                             <i class="fas fa-user-plus"></i>
                             Create Account
                         </button>
@@ -149,20 +166,20 @@
         </div>
     </section>
 
-    <!-- Login Section -->
+    <!-- LOGIN SECTION -->
     <section id="loginSection" class="page-section hidden">
         <div class="auth-container">
             <div class="auth-card">
                 <div class="auth-header">
                     <div class="logo">
                         <div class="logo-icon">
-                            <i class="fas fa-hospital-symbol"></i>
+                            <i class="fas fa-shield-alt"></i>
                         </div>
-                        <h1>MediVault</h1>
+                        <span>MediSecure</span>
                     </div>
                     <div class="auth-title">
-                        <h2>Welcome Back</h2>
-                        <p>Sign in to your hospital dashboard</p>
+                        <h2>Sign in to your hospital dashboard</h2>
+                        <p>Access your secure medical records system</p>
                     </div>
                 </div>
 
@@ -172,7 +189,7 @@
                         <div class="input-container">
                             <i class="fas fa-hospital"></i>
                             <input type="text" id="loginHospitalId" name="hospitalId"
-                                placeholder="Enter your Hospital ID" required>
+                                placeholder="Enter your hospital ID" required>
                         </div>
                     </div>
 
@@ -182,48 +199,49 @@
                             <i class="fas fa-lock"></i>
                             <input type="password" id="loginPassword" name="password" placeholder="Enter your password"
                                 required>
-                            <button type="button" id="toggleLoginPassword" class="toggle-btn">
+                            <button type="button" class="toggle-btn" id="toggleLoginPassword">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
                     </div>
 
                     <div class="checkbox-group">
-                        <input type="checkbox" id="rememberMe">
-                        <label for="rememberMe">Remember me for 30 days</label>
+                        <input type="checkbox" id="rememberMe" name="rememberMe">
+                        <label for="rememberMe">Keep me signed in</label>
                     </div>
 
-                    <button type="submit" id="loginBtn" class="auth-btn primary">
+                    <button type="submit" class="auth-btn primary">
                         <i class="fas fa-sign-in-alt"></i>
                         Sign In
                     </button>
-
-                    <div class="forgot-password">
-                        <a href="#" id="forgotPassword">Forgot your password?</a>
-                    </div>
                 </form>
 
+                <div class="forgot-password">
+                    <a href="#" id="forgotPassword">Forgot your password?</a>
+                </div>
+
                 <div class="auth-footer">
-                    <p>New to MediVault? <a onclick="app.showSignup()">Create an account</a></p>
+                    <p>New to MediSecure? <a onclick="app.showSignup()">Create an account</a></p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Dashboard Section -->
+    <!-- DASHBOARD SECTION -->
     <section id="dashboardSection" class="page-section hidden">
         <div class="dashboard-layout">
+            <!-- Sidebar -->
             <aside class="sidebar">
                 <div class="sidebar-header">
                     <div class="logo">
                         <div class="logo-icon">
-                            <i class="fas fa-hospital-symbol"></i>
+                            <i class="fas fa-shield-alt"></i>
                         </div>
-                        <span>MediVault</span>
+                        <h1>MediSecure</h1>
                     </div>
                     <div class="hospital-info">
                         <h3 id="dashboardHospitalName">Hospital Name</h3>
-                        <p id="dashboardHospitalId">ID: LOADING...</p>
+                        <p id="dashboardHospitalId">ID: HOSP001</p>
                     </div>
                 </div>
 
@@ -231,153 +249,165 @@
                     <ul class="menu-list">
                         <li class="menu-item active">
                             <a href="#" onclick="app.switchDashboardView('dashboard')">
-                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                                <i class="fas fa-chart-line"></i>
+                                <span>Dashboard</span>
                             </a>
                         </li>
                         <li class="menu-item">
                             <a href="#" onclick="app.switchDashboardView('records')">
-                                <i class="fas fa-file-medical"></i> Medical Records
+                                <i class="fas fa-file-medical"></i>
+                                <span>Medical Records</span>
                             </a>
                         </li>
                         <li class="menu-item">
                             <a href="#" onclick="app.switchDashboardView('patients')">
-                                <i class="fas fa-users"></i> Patients
+                                <i class="fas fa-users"></i>
+                                <span>Patients</span>
                             </a>
                         </li>
                         <li class="menu-item">
                             <a href="#" onclick="app.switchDashboardView('analytics')">
-                                <i class="fas fa-chart-bar"></i> Analytics
+                                <i class="fas fa-analytics"></i>
+                                <span>Analytics</span>
                             </a>
                         </li>
                         <li class="menu-item">
                             <a href="#" onclick="app.switchDashboardView('settings')">
-                                <i class="fas fa-cog"></i> Settings
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
                             </a>
                         </li>
                     </ul>
                 </nav>
 
                 <div class="sidebar-footer">
-                    <button id="logoutBtn" class="logout-btn">
+                    <button class="logout-btn" id="logoutBtn">
                         <i class="fas fa-sign-out-alt"></i>
-                        Logout
+                        <span>Logout</span>
                     </button>
                 </div>
             </aside>
 
+            <!-- Main Content -->
             <main class="main-content">
                 <!-- Dashboard View -->
                 <div id="dashboardView" class="dashboard-view">
-                    <header class="content-header">
+                    <div class="content-header">
                         <div class="page-title">
-                            <h1><i class="fas fa-plus-circle"></i> Add Medical Record</h1>
-                            <p>Create a new medical record for a patient</p>
+                            <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
+                            <p>Overview of your medical records system</p>
                         </div>
                         <div class="header-stats">
-                            <div class="stat-card">
-                                <div class="stat-number" id="todaysRecords">0</div>
-                                <div class="stat-label">Today's Records</div>
-                            </div>
                             <div class="stat-card">
                                 <div class="stat-number" id="totalRecords">0</div>
                                 <div class="stat-label">Total Records</div>
                             </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="totalPatients">0</div>
+                                <div class="stat-label">Patients</div>
+                            </div>
                         </div>
-                    </header>
+                    </div>
 
                     <div class="content-body">
-                        <!-- Patient Verification Card -->
+                        <!-- Add Medical Record Form -->
                         <div class="form-card">
                             <div class="card-header">
-                                <h3><i class="fas fa-user-check"></i> Patient Verification</h3>
+                                <h3><i class="fas fa-plus-circle"></i> Add New Medical Record</h3>
                             </div>
                             <div class="card-body">
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="patientId">Patient ID</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-id-card"></i>
-                                            <input type="text" id="patientId" placeholder="Enter Patient ID">
+                                <!-- Patient Verification -->
+                                <form id="patientVerificationForm">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="patientId">Patient ID</label>
+                                            <div class="input-container">
+                                                <i class="fas fa-user"></i>
+                                                <input type="text" id="patientId" placeholder="PAT2024001" required>
+                                            </div>
                                         </div>
-                                        <div id="patientIdStatus" class="status-message"></div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="patientPhone">Phone Number</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-phone"></i>
-                                            <input type="tel" id="patientPhone" placeholder="Enter phone number">
+                                        <div class="form-group">
+                                            <label for="patientPhone">Patient Phone</label>
+                                            <div class="input-container">
+                                                <i class="fas fa-phone"></i>
+                                                <input type="tel" id="patientPhone" placeholder="+91-9876543210"
+                                                    required>
+                                            </div>
                                         </div>
-                                        <div id="patientPhoneStatus" class="status-message"></div>
                                     </div>
-                                </div>
-                                <div class="form-row">
                                     <div class="form-group">
-                                        <label for="patientName">Patient Name</label>
+                                        <label for="patientName">Patient Name (for verification)</label>
                                         <div class="input-container">
-                                            <i class="fas fa-user"></i>
-                                            <input type="text" id="patientName" placeholder="Enter patient name">
+                                            <i class="fas fa-user-check"></i>
+                                            <input type="text" id="patientName" placeholder="John Doe" required>
+                                            <button type="button" id="verifyPatientBtn" class="verify-btn">
+                                                <i class="fas fa-shield-alt"></i>
+                                                Verify Patient
+                                            </button>
                                         </div>
-                                        <div id="patientNameStatus" class="status-message"></div>
                                     </div>
-                                    <div class="form-group">
-                                        <button type="button" id="verifyPatientBtn" class="btn primary"
-                                            style="margin-top: 1.5rem;">
-                                            <i class="fas fa-search"></i>
-                                            Verify Patient
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                </form>
 
-                        <!-- Patient Details Card -->
-                        <div id="patientDetailsCard" class="patient-verified-card hidden">
-                            <div class="verification-success">
-                                <i class="fas fa-check-circle"></i>
-                                <h4>Patient Verified Successfully</h4>
-                            </div>
-                            <div class="patient-info-grid">
-                                <div class="info-item">
-                                    <span class="label">Name:</span>
-                                    <span id="verifiedPatientName">John Doe</span>
+                                <!-- Patient Verified Card (Hidden initially) -->
+                                <div id="patientVerifiedCard" class="patient-verified-card hidden">
+                                    <div class="verification-success">
+                                        <i class="fas fa-check-circle"></i>
+                                        <h4>Patient Verified Successfully</h4>
+                                    </div>
+                                    <div class="patient-info-grid">
+                                        <div class="info-item">
+                                            <span class="label">Patient ID:</span>
+                                            <span id="verifiedPatientId">PAT2024001</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Name:</span>
+                                            <span id="verifiedPatientName">John Doe</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Phone:</span>
+                                            <span id="verifiedPatientPhone">+91-9876543210</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Gender:</span>
+                                            <span id="verifiedPatientGender">Male</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Blood Group:</span>
+                                            <span id="verifiedPatientBloodGroup">O+</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="label">Status:</span>
+                                            <span>Active</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="info-item">
-                                    <span class="label">Phone:</span>
-                                    <span id="verifiedPatientPhone">+1234567890</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="label">Email:</span>
-                                    <span id="verifiedPatientEmail">john@example.com</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="label">Age:</span>
-                                    <span id="verifiedPatientAge">30 years</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="label">Gender:</span>
-                                    <span id="verifiedPatientGender">Male</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="label">Blood Group:</span>
-                                    <span id="verifiedPatientBloodGroup">A+</span>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Medical Record Form -->
-                        <div id="medicalDetailsCard" class="form-card" style="display: none;">
-                            <div class="card-header">
-                                <h3><i class="fas fa-file-medical-alt"></i> Medical Record Details</h3>
-                            </div>
-                            <div class="card-body">
-                                <form id="addRecordForm" class="record-form">
+                                <!-- Medical Record Form (Hidden until patient verified) -->
+                                <form id="addRecordForm" class="record-form hidden">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="doctorName">Doctor Name</label>
+                                            <div class="input-container">
+                                                <i class="fas fa-user-md"></i>
+                                                <input type="text" id="doctorName" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="doctorLicense">Doctor License</label>
+                                            <div class="input-container">
+                                                <i class="fas fa-id-card"></i>
+                                                <input type="text" id="doctorLicense" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label for="recordType">Record Type</label>
                                             <div class="input-container">
-                                                <i class="fas fa-list"></i>
-                                                <select id="recordType" name="recordType" required>
-                                                    <option value="">Select record type</option>
+                                                <i class="fas fa-clipboard"></i>
+                                                <select id="recordType" required>
+                                                    <option value="">Select Type</option>
                                                     <option value="consultation">Consultation</option>
                                                     <option value="prescription">Prescription</option>
                                                     <option value="lab_report">Lab Report</option>
@@ -390,13 +420,12 @@
                                             </div>
                                         </div>
                                         <div class="form-group">
-                                            <label for="severity">Severity Level</label>
+                                            <label for="severity">Severity</label>
                                             <div class="input-container">
                                                 <i class="fas fa-exclamation-triangle"></i>
-                                                <select id="severity" name="severity" required>
-                                                    <option value="">Select severity</option>
+                                                <select id="severity" required>
                                                     <option value="Low">Low</option>
-                                                    <option value="Medium">Medium</option>
+                                                    <option value="Medium" selected>Medium</option>
                                                     <option value="High">High</option>
                                                     <option value="Critical">Critical</option>
                                                 </select>
@@ -404,39 +433,20 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="doctorName">Doctor Name</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-user-md"></i>
-                                                <input type="text" id="doctorName" name="doctorName"
-                                                    placeholder="Enter doctor's name" required>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="doctorSpecialization">Specialization</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-stethoscope"></i>
-                                                <input type="text" id="doctorSpecialization" name="doctorSpecialization"
-                                                    placeholder="Doctor's specialization">
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     <div class="form-group">
                                         <label for="diagnosis">Diagnosis</label>
                                         <div class="input-container">
-                                            <i class="fas fa-clipboard-list"></i>
-                                            <textarea id="diagnosis" name="diagnosis" rows="3"
-                                                placeholder="Enter diagnosis details" required></textarea>
+                                            <i class="fas fa-stethoscope"></i>
+                                            <textarea id="diagnosis" rows="3" placeholder="Enter diagnosis details"
+                                                required></textarea>
                                         </div>
                                     </div>
 
                                     <div class="form-group">
                                         <label for="treatment">Treatment</label>
                                         <div class="input-container">
-                                            <i class="fas fa-heartbeat"></i>
-                                            <textarea id="treatment" name="treatment" rows="3"
+                                            <i class="fas fa-pills"></i>
+                                            <textarea id="treatment" rows="3"
                                                 placeholder="Enter treatment details"></textarea>
                                         </div>
                                     </div>
@@ -445,8 +455,8 @@
                                         <div class="form-group">
                                             <label for="medications">Medications</label>
                                             <div class="input-container">
-                                                <i class="fas fa-pills"></i>
-                                                <textarea id="medications" name="medications" rows="2"
+                                                <i class="fas fa-prescription-bottle"></i>
+                                                <textarea id="medications" rows="2"
                                                     placeholder="List prescribed medications"></textarea>
                                             </div>
                                         </div>
@@ -454,8 +464,26 @@
                                             <label for="followUpDate">Follow-up Date</label>
                                             <div class="input-container">
                                                 <i class="fas fa-calendar-alt"></i>
-                                                <input type="date" id="followUpDate" name="followUpDate">
+                                                <input type="date" id="followUpDate">
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="labResults">Lab Results</label>
+                                        <div class="input-container">
+                                            <i class="fas fa-flask"></i>
+                                            <textarea id="labResults" rows="2"
+                                                placeholder="Enter lab results if any"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="vitalSigns">Vital Signs</label>
+                                        <div class="input-container">
+                                            <i class="fas fa-heartbeat"></i>
+                                            <textarea id="vitalSigns" rows="2"
+                                                placeholder="BP: 120/80, Pulse: 72, Temp: 98.6°F"></textarea>
                                         </div>
                                     </div>
 
@@ -463,21 +491,22 @@
                                         <label for="notes">Additional Notes</label>
                                         <div class="input-container">
                                             <i class="fas fa-sticky-note"></i>
-                                            <textarea id="notes" name="notes" rows="3"
+                                            <textarea id="notes" rows="3"
                                                 placeholder="Any additional notes or observations"></textarea>
                                         </div>
                                     </div>
 
+                                    <!-- File Upload -->
                                     <div class="form-group">
-                                        <label for="attachments">Attachments</label>
+                                        <label>Attachments</label>
                                         <div class="file-upload-area">
-                                            <input type="file" id="attachments" name="attachments" multiple
+                                            <input type="file" id="attachments" multiple
                                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
                                             <div class="file-upload-content">
                                                 <i class="fas fa-cloud-upload-alt"></i>
                                                 <div class="upload-text">
                                                     <p>Click to upload files or drag and drop</p>
-                                                    <span>PDF, DOC, Images up to 10MB each</span>
+                                                    <span>Support: PDF, Images, Documents</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -485,13 +514,13 @@
                                     </div>
 
                                     <div class="form-actions">
-                                        <button type="button" class="btn secondary" onclick="this.form.reset()">
-                                            <i class="fas fa-times"></i>
-                                            Clear Form
+                                        <button type="button" class="btn secondary" onclick="app.resetRecordForm()">
+                                            <i class="fas fa-undo"></i>
+                                            Reset
                                         </button>
-                                        <button type="submit" id="submitRecord" class="btn primary">
+                                        <button type="submit" class="btn primary">
                                             <i class="fas fa-save"></i>
-                                            Add Medical Record
+                                            Save Medical Record
                                         </button>
                                     </div>
                                 </form>
@@ -502,32 +531,35 @@
 
                 <!-- Records View -->
                 <div id="recordsView" class="dashboard-view hidden">
-                    <header class="content-header">
+                    <div class="content-header">
                         <div class="page-title">
                             <h1><i class="fas fa-file-medical"></i> Medical Records</h1>
-                            <p>View and manage medical records</p>
+                            <p>View and manage all medical records</p>
                         </div>
-                    </header>
+                    </div>
                     <div class="content-body">
                         <div class="records-container">
                             <div class="records-header">
                                 <div class="search-bar">
                                     <i class="fas fa-search"></i>
-                                    <input type="text" placeholder="Search records..." id="recordsSearch">
+                                    <input type="text" id="recordSearch"
+                                        placeholder="Search by patient name, ID, or diagnosis...">
                                 </div>
                                 <div class="filter-buttons">
                                     <button class="btn secondary">
-                                        <i class="fas fa-filter"></i> Filter
+                                        <i class="fas fa-filter"></i>
+                                        Filter
                                     </button>
-                                    <button class="btn primary">
-                                        <i class="fas fa-download"></i> Export
+                                    <button class="btn secondary">
+                                        <i class="fas fa-download"></i>
+                                        Export
                                     </button>
                                 </div>
                             </div>
-                            <div id="recordsList" class="records-list">
+                            <div class="records-list" id="recordsList">
                                 <div class="no-records">
-                                    <i class="fas fa-folder-open"></i>
-                                    <h3>No records found</h3>
+                                    <i class="fas fa-file-medical"></i>
+                                    <h3>No Records Found</h3>
                                     <p>Medical records will appear here once created</p>
                                 </div>
                             </div>
@@ -535,30 +567,31 @@
                     </div>
                 </div>
 
-                <!-- Other views can be added similarly -->
+                <!-- Patients View -->
                 <div id="patientsView" class="dashboard-view hidden">
-                    <header class="content-header">
+                    <div class="content-header">
                         <div class="page-title">
                             <h1><i class="fas fa-users"></i> Patients</h1>
                             <p>Manage patient information</p>
                         </div>
-                    </header>
+                    </div>
                     <div class="content-body">
                         <div class="coming-soon">
                             <i class="fas fa-users"></i>
-                            <h2>Patients Management</h2>
+                            <h2>Patient Management</h2>
                             <p>This feature is coming soon</p>
                         </div>
                     </div>
                 </div>
 
+                <!-- Analytics View -->
                 <div id="analyticsView" class="dashboard-view hidden">
-                    <header class="content-header">
+                    <div class="content-header">
                         <div class="page-title">
-                            <h1><i class="fas fa-chart-bar"></i> Analytics</h1>
-                            <p>View hospital statistics and insights</p>
+                            <h1><i class="fas fa-analytics"></i> Analytics</h1>
+                            <p>View system analytics and reports</p>
                         </div>
-                    </header>
+                    </div>
                     <div class="content-body">
                         <div class="coming-soon">
                             <i class="fas fa-chart-bar"></i>
@@ -568,17 +601,18 @@
                     </div>
                 </div>
 
+                <!-- Settings View -->
                 <div id="settingsView" class="dashboard-view hidden">
-                    <header class="content-header">
+                    <div class="content-header">
                         <div class="page-title">
                             <h1><i class="fas fa-cog"></i> Settings</h1>
-                            <p>Configure hospital settings</p>
+                            <p>Manage your hospital settings</p>
                         </div>
-                    </header>
+                    </div>
                     <div class="content-body">
                         <div class="coming-soon">
-                            <i class="fas fa-cog"></i>
-                            <h2>Settings Panel</h2>
+                            <i class="fas fa-cogs"></i>
+                            <h2>System Settings</h2>
                             <p>This feature is coming soon</p>
                         </div>
                     </div>
@@ -586,11 +620,9 @@
             </main>
         </div>
     </section>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <script src="app.js"></script>
-    <script>
-        const app = new MediSecureApp();
-    </script>
 </body>
 
 </html>
