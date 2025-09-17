@@ -4,17 +4,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediSecure - Secure Medical Records</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="MediVault - Secure Medical Records Management System for Hospitals">
+    <meta name="keywords" content="medical records, hospital management, healthcare, secure, HIPAA">
+    <meta name="author" content="MediVault Team">
+    
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏥%3C/text%3E%3C/svg%3E">
+    <link rel="alternate icon" href="data:image/x-icon;base64,">
+    
+    <title>MediVault - Secure Medical Records Management</title>
+    
+    <!-- Fonts and Styles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous">
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js" as="script">
 </head>
 
 <body>
-    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Load Scripts in Proper Order -->
+    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+    
     <!-- Animated Background -->
-    <div class="animated-bg">
+    <div class="animated-bg" aria-hidden="true">
         <div class="floating-shapes">
             <div class="shape shape-1"></div>
             <div class="shape shape-2"></div>
@@ -25,61 +54,67 @@
     </div>
 
     <!-- Loading Screen -->
-    <div id="loadingScreen" class="loading-screen">
+    <div id="loadingScreen" class="loading-screen" role="status" aria-label="Loading application">
         <div class="loading-content">
             <div class="logo-icon">
-                <i class="fas fa-shield-alt"></i>
+                <i class="fas fa-shield-alt" aria-hidden="true"></i>
             </div>
-            <h2>MediSecure</h2>
-            <div class="loading-spinner"></div>
+            <h2>MediVault</h2>
+            <div class="loading-spinner" aria-hidden="true"></div>
             <p>Initializing secure connection...</p>
         </div>
     </div>
 
     <!-- Connection Status -->
-    <div id="connectionStatus" class="connection-status hidden">
-        <i class="fas fa-info-circle"></i>
+    <div id="connectionStatus" class="connection-status hidden" role="alert" aria-live="polite">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
         <span>Connecting...</span>
     </div>
 
     <!-- Notification Container -->
-    <div id="notificationContainer" class="notification-container"></div>
+    <div id="notificationContainer" class="notification-container" role="region" aria-label="Notifications" aria-live="polite"></div>
 
     <!-- SIGNUP SECTION -->
-    <section id="signupSection" class="page-section">
+    <section id="signupSection" class="page-section" role="main" aria-label="Hospital Registration">
         <div class="auth-container">
             <div class="auth-card">
                 <div class="auth-header">
                     <div class="logo">
                         <div class="logo-icon">
-                            <i class="fas fa-shield-alt"></i>
+                            <i class="fas fa-shield-alt" aria-hidden="true"></i>
                         </div>
-                        <span>MediSecure</span>
+                        <span>MediVault</span>
                     </div>
                     <div class="auth-title">
-                        <h2>Join our secure medical records network</h2>
+                        <h1>Join our secure medical records network</h1>
                         <p>Verify your hospital credentials to get started</p>
                     </div>
                 </div>
 
-                <form id="signupForm" class="auth-form">
+                <form id="signupForm" class="auth-form" novalidate>
                     <!-- Hospital Verification -->
                     <div class="form-group">
-                        <label for="hospitalId">Hospital ID</label>
+                        <label for="hospitalId">Hospital ID <span aria-label="required">*</span></label>
                         <div class="input-container has-verify-btn">
-                            <input type="text" id="hospitalId" name="hospitalId" placeholder="Enter your hospital ID"
-                                required>
-                            <button type="button" id="verifyBtn" class="verify-btn">
-                                <i class="fas fa-search"></i>
-                                Verify
+                            <input type="text" 
+                                   id="hospitalId" 
+                                   name="hospitalId" 
+                                   placeholder="Enter your hospital ID (e.g., HOSP001)"
+                                   required
+                                   aria-describedby="hospitalId-help"
+                                   autocomplete="organization">
+                            <button type="button" id="verifyBtn" class="verify-btn" aria-describedby="verify-help">
+                                <i class="fas fa-search" aria-hidden="true"></i>
+                                <span>Verify</span>
                             </button>
                         </div>
+                        <small id="hospitalId-help" class="help-text">Enter your unique hospital identifier</small>
                     </div>
 
                     <!-- Hospital Information Display (Hidden initially) -->
-                    <div id="hospitalInfo" class="hospital-card hidden">
+                    <div id="hospitalInfo" class="hospital-card hidden" role="region" aria-label="Hospital Information">
                         <div class="hospital-info">
-                            <div class="hospital-icon">
+                            <div class="hospital-icon" aria-hidden="true">
                                 <i class="fas fa-hospital"></i>
                             </div>
                             <div class="hospital-details">
@@ -89,9 +124,9 @@
                                     <span class="hospital-type" id="hospitalType">Type</span>
                                     <span class="hospital-license" id="hospitalLicense">License</span>
                                 </div>
-                                <div class="verification-badge">
-                                    <i class="fas fa-check-circle"></i>
-                                    Hospital Verified Successfully
+                                <div class="verification-badge" role="status">
+                                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                                    <span>Hospital Verified Successfully</span>
                                 </div>
                             </div>
                         </div>
@@ -100,46 +135,79 @@
                     <!-- Password Section (Hidden until verification) -->
                     <div id="passwordSection" class="password-section hidden">
                         <div class="form-group">
-                            <label for="password">Password</label>
+                            <label for="hospitalName">Hospital Name <span aria-label="required">*</span></label>
                             <div class="input-container">
-                                <i class="fas fa-lock"></i>
-                                <input type="password" id="password" name="password"
-                                    placeholder="Create a strong password" required>
-                                <button type="button" class="toggle-btn" id="togglePassword">
-                                    <i class="fas fa-eye"></i>
+                                <i class="fas fa-hospital" aria-hidden="true"></i>
+                                <input type="text" 
+                                       id="hospitalNameInput" 
+                                       name="hospitalName" 
+                                       placeholder="Enter full hospital name"
+                                       required
+                                       autocomplete="organization">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password <span aria-label="required">*</span></label>
+                            <div class="input-container">
+                                <i class="fas fa-lock" aria-hidden="true"></i>
+                                <input type="password" 
+                                       id="password" 
+                                       name="password"
+                                       placeholder="Create a strong password" 
+                                       required
+                                       aria-describedby="password-help password-strength"
+                                       autocomplete="new-password">
+                                <button type="button" class="toggle-btn" id="togglePassword" aria-label="Show password">
+                                    <i class="fas fa-eye" aria-hidden="true"></i>
                                 </button>
                             </div>
-                            <div class="password-strength">
-                                <div class="strength-bar" id="strengthBar"></div>
+                            <small id="password-help" class="help-text">Must contain at least 8 characters with uppercase, lowercase, number, and special character</small>
+                            <div class="password-strength" id="password-strength">
+                                <div class="strength-bar" id="strengthBar" role="progressbar" aria-label="Password strength"></div>
                                 <div class="strength-text" id="strengthText">Enter password to check strength</div>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="confirmPassword">Confirm Password</label>
+                            <label for="confirmPassword">Confirm Password <span aria-label="required">*</span></label>
                             <div class="input-container">
-                                <i class="fas fa-lock"></i>
-                                <input type="password" id="confirmPassword" name="confirmPassword"
-                                    placeholder="Confirm your password" required>
+                                <i class="fas fa-lock" aria-hidden="true"></i>
+                                <input type="password" 
+                                       id="confirmPassword" 
+                                       name="confirmPassword"
+                                       placeholder="Confirm your password" 
+                                       required
+                                       aria-describedby="password-match"
+                                       autocomplete="new-password">
                             </div>
-                            <div class="status-message" id="passwordMatch"></div>
+                            <div class="status-message" id="passwordMatch" aria-live="polite"></div>
                         </div>
 
                         <!-- Admin Contact -->
                         <div class="form-group">
-                            <label for="adminEmail">Admin Email</label>
+                            <label for="adminEmail">Admin Email <span aria-label="required">*</span></label>
                             <div class="input-container">
-                                <i class="fas fa-envelope"></i>
-                                <input type="email" id="adminEmail" name="adminEmail" placeholder="admin@hospital.com"
-                                    required>
+                                <i class="fas fa-envelope" aria-hidden="true"></i>
+                                <input type="email" 
+                                       id="adminEmail" 
+                                       name="adminEmail" 
+                                       placeholder="admin@hospital.com"
+                                       required
+                                       autocomplete="email">
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="adminPhone">Admin Phone</label>
+                            <label for="adminPhone">Admin Phone <span aria-label="required">*</span></label>
                             <div class="input-container">
-                                <i class="fas fa-phone"></i>
-                                <input type="tel" id="adminPhone" name="adminPhone" placeholder="+1234567890" required>
+                                <i class="fas fa-phone" aria-hidden="true"></i>
+                                <input type="tel" 
+                                       id="adminPhone" 
+                                       name="adminPhone" 
+                                       placeholder="+91-9876543210" 
+                                       required
+                                       autocomplete="tel">
                             </div>
                         </div>
 
@@ -147,60 +215,68 @@
                         <div class="checkbox-group">
                             <input type="checkbox" id="acceptTerms" name="acceptTerms" required>
                             <label for="acceptTerms">
-                                I agree to the <a href="#" target="_blank">Terms of Service</a> and
-                                <a href="#" target="_blank">Privacy Policy</a>
+                                I agree to the <a href="#" target="_blank" rel="noopener">Terms of Service</a> and
+                                <a href="#" target="_blank" rel="noopener">Privacy Policy</a>
                             </label>
                         </div>
 
                         <button type="submit" class="auth-btn primary">
-                            <i class="fas fa-user-plus"></i>
-                            Create Account
+                            <i class="fas fa-user-plus" aria-hidden="true"></i>
+                            <span>Create Account</span>
                         </button>
                     </div>
                 </form>
 
                 <div class="auth-footer">
-                    <p>Already have an account? <a onclick="app.showLogin()">Sign in here</a></p>
+                    <p>Already have an account? <a href="#" onclick="app.showLogin()" class="link-button">Sign in here</a></p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- LOGIN SECTION -->
-    <section id="loginSection" class="page-section hidden">
+    <section id="loginSection" class="page-section hidden" role="main" aria-label="Hospital Login">
         <div class="auth-container">
             <div class="auth-card">
                 <div class="auth-header">
                     <div class="logo">
                         <div class="logo-icon">
-                            <i class="fas fa-shield-alt"></i>
+                            <i class="fas fa-shield-alt" aria-hidden="true"></i>
                         </div>
-                        <span>MediSecure</span>
+                        <span>MediVault</span>
                     </div>
                     <div class="auth-title">
-                        <h2>Sign in to your hospital dashboard</h2>
+                        <h1>Sign in to your hospital dashboard</h1>
                         <p>Access your secure medical records system</p>
                     </div>
                 </div>
 
-                <form id="loginForm" class="auth-form">
+                <form id="loginForm" class="auth-form" novalidate>
                     <div class="form-group">
-                        <label for="loginHospitalId">Hospital ID</label>
+                        <label for="loginHospitalId">Hospital ID <span aria-label="required">*</span></label>
                         <div class="input-container">
-                            <i class="fas fa-hospital"></i>
-                            <input type="text" id="loginHospitalId" name="hospitalId"
-                                placeholder="Enter your hospital ID" required>
+                            <i class="fas fa-hospital" aria-hidden="true"></i>
+                            <input type="text" 
+                                   id="loginHospitalId" 
+                                   name="hospitalId"
+                                   placeholder="Enter your hospital ID" 
+                                   required
+                                   autocomplete="organization">
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="loginPassword">Password</label>
+                        <label for="loginPassword">Password <span aria-label="required">*</span></label>
                         <div class="input-container">
-                            <i class="fas fa-lock"></i>
-                            <input type="password" id="loginPassword" name="password" placeholder="Enter your password"
-                                required>
-                            <button type="button" class="toggle-btn" id="toggleLoginPassword">
-                                <i class="fas fa-eye"></i>
+                            <i class="fas fa-lock" aria-hidden="true"></i>
+                            <input type="password" 
+                                   id="loginPassword" 
+                                   name="password" 
+                                   placeholder="Enter your password"
+                                   required
+                                   autocomplete="current-password">
+                            <button type="button" class="toggle-btn" id="toggleLoginPassword" aria-label="Show password">
+                                <i class="fas fa-eye" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
@@ -211,69 +287,80 @@
                     </div>
 
                     <button type="submit" class="auth-btn primary">
-                        <i class="fas fa-sign-in-alt"></i>
-                        Sign In
+                        <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+                        <span>Sign In</span>
                     </button>
                 </form>
 
                 <div class="forgot-password">
-                    <a href="#" id="forgotPassword">Forgot your password?</a>
+                    <a href="#" id="forgotPassword" class="link-button">Forgot your password?</a>
                 </div>
 
                 <div class="auth-footer">
-                    <p>New to MediSecure? <a onclick="app.showSignup()">Create an account</a></p>
+                    <p>New to MediVault? <a href="#" onclick="app.showSignup()" class="link-button">Create an account</a></p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- DASHBOARD SECTION -->
-    <section id="dashboardSection" class="page-section hidden">
+    <section id="dashboardSection" class="page-section hidden" role="main" aria-label="Hospital Dashboard">
         <div class="dashboard-layout">
             <!-- Sidebar -->
-            <aside class="sidebar">
+            <aside class="sidebar" role="navigation" aria-label="Dashboard Navigation">
                 <div class="sidebar-header">
                     <div class="logo">
                         <div class="logo-icon">
-                            <i class="fas fa-shield-alt"></i>
+                            <i class="fas fa-shield-alt" aria-hidden="true"></i>
                         </div>
-                        <h1>MediSecure</h1>
+                        <h1>MediVault</h1>
                     </div>
                     <div class="hospital-info">
-                        <h3 id="dashboardHospitalName">Hospital Name</h3>
+                        <h2 id="dashboardHospitalName">Hospital Name</h2>
                         <p id="dashboardHospitalId">ID: HOSP001</p>
                     </div>
                 </div>
 
                 <nav class="sidebar-menu">
-                    <ul class="menu-list">
-                        <li class="menu-item active">
-                            <a href="#" onclick="app.switchDashboardView('dashboard')">
-                                <i class="fas fa-chart-line"></i>
+                    <ul class="menu-list" role="menubar">
+                        <li class="menu-item active" role="none">
+                            <a href="#" 
+                               onclick="app.switchDashboardView('dashboard')" 
+                               role="menuitem"
+                               aria-current="page">
+                                <i class="fas fa-chart-line" aria-hidden="true"></i>
                                 <span>Dashboard</span>
                             </a>
                         </li>
-                        <li class="menu-item">
-                            <a href="#" onclick="app.switchDashboardView('records')">
-                                <i class="fas fa-file-medical"></i>
+                        <li class="menu-item" role="none">
+                            <a href="#" 
+                               onclick="app.switchDashboardView('records')" 
+                               role="menuitem">
+                                <i class="fas fa-file-medical" aria-hidden="true"></i>
                                 <span>Medical Records</span>
                             </a>
                         </li>
-                        <li class="menu-item">
-                            <a href="#" onclick="app.switchDashboardView('patients')">
-                                <i class="fas fa-users"></i>
+                        <li class="menu-item" role="none">
+                            <a href="#" 
+                               onclick="app.switchDashboardView('patients')" 
+                               role="menuitem">
+                                <i class="fas fa-users" aria-hidden="true"></i>
                                 <span>Patients</span>
                             </a>
                         </li>
-                        <li class="menu-item">
-                            <a href="#" onclick="app.switchDashboardView('analytics')">
-                                <i class="fas fa-analytics"></i>
+                        <li class="menu-item" role="none">
+                            <a href="#" 
+                               onclick="app.switchDashboardView('analytics')" 
+                               role="menuitem">
+                                <i class="fas fa-chart-bar" aria-hidden="true"></i>
                                 <span>Analytics</span>
                             </a>
                         </li>
-                        <li class="menu-item">
-                            <a href="#" onclick="app.switchDashboardView('settings')">
-                                <i class="fas fa-cog"></i>
+                        <li class="menu-item" role="none">
+                            <a href="#" 
+                               onclick="app.switchDashboardView('settings')" 
+                               role="menuitem">
+                                <i class="fas fa-cog" aria-hidden="true"></i>
                                 <span>Settings</span>
                             </a>
                         </li>
@@ -281,29 +368,29 @@
                 </nav>
 
                 <div class="sidebar-footer">
-                    <button class="logout-btn" id="logoutBtn">
-                        <i class="fas fa-sign-out-alt"></i>
+                    <button class="logout-btn" id="logoutBtn" aria-label="Logout from dashboard">
+                        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
                         <span>Logout</span>
                     </button>
                 </div>
             </aside>
 
             <!-- Main Content -->
-            <main class="main-content">
+            <main class="main-content" id="main-content">
                 <!-- Dashboard View -->
                 <div id="dashboardView" class="dashboard-view">
                     <div class="content-header">
                         <div class="page-title">
-                            <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
+                            <h1><i class="fas fa-chart-line" aria-hidden="true"></i> Dashboard</h1>
                             <p>Overview of your medical records system</p>
                         </div>
-                        <div class="header-stats">
+                        <div class="header-stats" role="region" aria-label="Statistics Summary">
                             <div class="stat-card">
-                                <div class="stat-number" id="totalRecords">0</div>
+                                <div class="stat-number" id="totalRecords" aria-label="Total records count">0</div>
                                 <div class="stat-label">Total Records</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-number" id="totalPatients">0</div>
+                                <div class="stat-number" id="totalPatients" aria-label="Total patients count">0</div>
                                 <div class="stat-label">Patients</div>
                             </div>
                         </div>
@@ -313,51 +400,62 @@
                         <!-- Add Medical Record Form -->
                         <div class="form-card">
                             <div class="card-header">
-                                <h3><i class="fas fa-plus-circle"></i> Add New Medical Record</h3>
+                                <h2><i class="fas fa-plus-circle" aria-hidden="true"></i> Add New Medical Record</h2>
                             </div>
                             <div class="card-body">
                                 <!-- Patient Verification -->
-                                <form id="patientVerificationForm">
+                                <div class="form-section">
+                                    <h3>Patient Verification</h3>
                                     <div class="form-row">
                                         <div class="form-group">
-                                            <label for="patientId">Patient ID</label>
+                                            <label for="patientId">Patient ID <span aria-label="required">*</span></label>
                                             <div class="input-container">
-                                                <i class="fas fa-user"></i>
-                                                <input type="text" id="patientId" placeholder="PAT2024001" required>
+                                                <i class="fas fa-user" aria-hidden="true"></i>
+                                                <input type="text" 
+                                                       id="patientId" 
+                                                       placeholder="PAT001" 
+                                                       required
+                                                       aria-describedby="patientId-help">
                                             </div>
+                                            <small id="patientId-help" class="help-text">Enter the patient's unique identifier</small>
                                         </div>
                                         <div class="form-group">
-                                            <label for="patientPhone">Patient Phone</label>
+                                            <label for="patientPhone">Patient Phone <span aria-label="required">*</span></label>
                                             <div class="input-container">
-                                                <i class="fas fa-phone"></i>
-                                                <input type="tel" id="patientPhone" placeholder="+91-9876543210"
-                                                    required>
+                                                <i class="fas fa-phone" aria-hidden="true"></i>
+                                                <input type="tel" 
+                                                       id="patientPhone" 
+                                                       placeholder="+91-9876543210"
+                                                       required>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="patientName">Patient Name (for verification)</label>
+                                        <label for="patientName">Patient Name (for verification) <span aria-label="required">*</span></label>
                                         <div class="input-container">
-                                            <i class="fas fa-user-check"></i>
-                                            <input type="text" id="patientName" placeholder="John Doe" required>
+                                            <i class="fas fa-user-check" aria-hidden="true"></i>
+                                            <input type="text" 
+                                                   id="patientName" 
+                                                   placeholder="John Doe" 
+                                                   required>
                                             <button type="button" id="verifyPatientBtn" class="verify-btn">
-                                                <i class="fas fa-shield-alt"></i>
-                                                Verify Patient
+                                                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                                                <span>Verify Patient</span>
                                             </button>
                                         </div>
                                     </div>
-                                </form>
+                                </div>
 
                                 <!-- Patient Verified Card (Hidden initially) -->
-                                <div id="patientVerifiedCard" class="patient-verified-card hidden">
-                                    <div class="verification-success">
-                                        <i class="fas fa-check-circle"></i>
+                                <div id="patientVerifiedCard" class="patient-verified-card hidden" role="region" aria-label="Verified Patient Information">
+                                    <div class="verification-success" role="status">
+                                        <i class="fas fa-check-circle" aria-hidden="true"></i>
                                         <h4>Patient Verified Successfully</h4>
                                     </div>
                                     <div class="patient-info-grid">
                                         <div class="info-item">
                                             <span class="label">Patient ID:</span>
-                                            <span id="verifiedPatientId">PAT2024001</span>
+                                            <span id="verifiedPatientId">PAT001</span>
                                         </div>
                                         <div class="info-item">
                                             <span class="label">Name:</span>
@@ -383,144 +481,154 @@
                                 </div>
 
                                 <!-- Medical Record Form (Hidden until patient verified) -->
-                                <form id="addRecordForm" class="record-form hidden">
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="doctorName">Doctor Name</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-user-md"></i>
-                                                <input type="text" id="doctorName" required>
+                                <form id="addRecordForm" class="record-form hidden" novalidate>
+                                    <div class="form-section">
+                                        <h3>Doctor Information</h3>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="doctorName">Doctor Name <span aria-label="required">*</span></label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-user-md" aria-hidden="true"></i>
+                                                    <input type="text" id="doctorName" required autocomplete="name">
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="doctorLicense">Doctor License</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-id-card"></i>
-                                                <input type="text" id="doctorLicense" required>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="recordType">Record Type</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-clipboard"></i>
-                                                <select id="recordType" required>
-                                                    <option value="">Select Type</option>
-                                                    <option value="consultation">Consultation</option>
-                                                    <option value="prescription">Prescription</option>
-                                                    <option value="lab_report">Lab Report</option>
-                                                    <option value="imaging">Imaging</option>
-                                                    <option value="surgery">Surgery</option>
-                                                    <option value="vaccination">Vaccination</option>
-                                                    <option value="discharge">Discharge</option>
-                                                    <option value="emergency">Emergency</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="severity">Severity</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-exclamation-triangle"></i>
-                                                <select id="severity" required>
-                                                    <option value="Low">Low</option>
-                                                    <option value="Medium" selected>Medium</option>
-                                                    <option value="High">High</option>
-                                                    <option value="Critical">Critical</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="diagnosis">Diagnosis</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-stethoscope"></i>
-                                            <textarea id="diagnosis" rows="3" placeholder="Enter diagnosis details"
-                                                required></textarea>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="treatment">Treatment</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-pills"></i>
-                                            <textarea id="treatment" rows="3"
-                                                placeholder="Enter treatment details"></textarea>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="medications">Medications</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-prescription-bottle"></i>
-                                                <textarea id="medications" rows="2"
-                                                    placeholder="List prescribed medications"></textarea>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="followUpDate">Follow-up Date</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-calendar-alt"></i>
-                                                <input type="date" id="followUpDate">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="labResults">Lab Results</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-flask"></i>
-                                            <textarea id="labResults" rows="2"
-                                                placeholder="Enter lab results if any"></textarea>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="vitalSigns">Vital Signs</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-heartbeat"></i>
-                                            <textarea id="vitalSigns" rows="2"
-                                                placeholder="BP: 120/80, Pulse: 72, Temp: 98.6°F"></textarea>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="notes">Additional Notes</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-sticky-note"></i>
-                                            <textarea id="notes" rows="3"
-                                                placeholder="Any additional notes or observations"></textarea>
-                                        </div>
-                                    </div>
-
-                                    <!-- File Upload -->
-                                    <div class="form-group">
-                                        <label>Attachments</label>
-                                        <div class="file-upload-area">
-                                            <input type="file" id="attachments" multiple
-                                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-                                            <div class="file-upload-content">
-                                                <i class="fas fa-cloud-upload-alt"></i>
-                                                <div class="upload-text">
-                                                    <p>Click to upload files or drag and drop</p>
-                                                    <span>Support: PDF, Images, Documents</span>
+                                            <div class="form-group">
+                                                <label for="doctorSpecialization">Specialization</label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-stethoscope" aria-hidden="true"></i>
+                                                    <input type="text" 
+                                                           id="doctorSpecialization" 
+                                                           placeholder="e.g., Cardiology, General Medicine">
                                                 </div>
                                             </div>
                                         </div>
-                                        <div id="filesList" class="files-list"></div>
+                                    </div>
+
+                                    <div class="form-section">
+                                        <h3>Record Details</h3>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="recordType">Record Type <span aria-label="required">*</span></label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-clipboard" aria-hidden="true"></i>
+                                                    <select id="recordType" required>
+                                                        <option value="">Select Type</option>
+                                                        <option value="consultation">Consultation</option>
+                                                        <option value="prescription">Prescription</option>
+                                                        <option value="lab_report">Lab Report</option>
+                                                        <option value="imaging">Imaging</option>
+                                                        <option value="surgery">Surgery</option>
+                                                        <option value="vaccination">Vaccination</option>
+                                                        <option value="discharge">Discharge</option>
+                                                        <option value="emergency">Emergency</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="severity">Severity <span aria-label="required">*</span></label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                                                    <select id="severity" required>
+                                                        <option value="low">Low</option>
+                                                        <option value="medium" selected>Medium</option>
+                                                        <option value="high">High</option>
+                                                        <option value="critical">Critical</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="diagnosis">Diagnosis <span aria-label="required">*</span></label>
+                                            <div class="input-container">
+                                                <i class="fas fa-stethoscope" aria-hidden="true"></i>
+                                                <textarea id="diagnosis" 
+                                                          rows="3" 
+                                                          placeholder="Enter diagnosis details"
+                                                          required
+                                                          aria-describedby="diagnosis-help"></textarea>
+                                            </div>
+                                            <small id="diagnosis-help" class="help-text">Provide detailed diagnosis information</small>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="treatment">Treatment</label>
+                                            <div class="input-container">
+                                                <i class="fas fa-pills" aria-hidden="true"></i>
+                                                <textarea id="treatment" 
+                                                          rows="3"
+                                                          placeholder="Enter treatment details"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="medications">Medications</label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-prescription-bottle" aria-hidden="true"></i>
+                                                    <textarea id="medications" 
+                                                              rows="2"
+                                                              placeholder="List prescribed medications with dosage"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="followUpDate">Follow-up Date</label>
+                                                <div class="input-container">
+                                                    <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                                                    <input type="date" id="followUpDate">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="vitalSigns">Vital Signs</label>
+                                            <div class="input-container">
+                                                <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                                                <textarea id="vitalSigns" 
+                                                          rows="2"
+                                                          placeholder="BP: 120/80, Pulse: 72, Temp: 98.6°F, SpO2: 98%"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="notes">Additional Notes</label>
+                                            <div class="input-container">
+                                                <i class="fas fa-sticky-note" aria-hidden="true"></i>
+                                                <textarea id="notes" 
+                                                          rows="3"
+                                                          placeholder="Any additional notes or observations"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <!-- File Upload -->
+                                        <div class="form-group">
+                                            <label for="attachments">Attachments</label>
+                                            <div class="file-upload-area" role="button" tabindex="0" aria-describedby="file-help">
+                                                <input type="file" 
+                                                       id="attachments" 
+                                                       multiple
+                                                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                                <div class="file-upload-content">
+                                                    <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
+                                                    <div class="upload-text">
+                                                        <p>Click to upload files or drag and drop</p>
+                                                        <span>Support: PDF, Images, Documents (Max 10MB each)</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <small id="file-help" class="help-text">Upload relevant medical documents, images, or reports</small>
+                                            <div id="filesList" class="files-list" role="region" aria-label="Selected files"></div>
+                                        </div>
                                     </div>
 
                                     <div class="form-actions">
                                         <button type="button" class="btn secondary" onclick="app.resetRecordForm()">
-                                            <i class="fas fa-undo"></i>
-                                            Reset
+                                            <i class="fas fa-undo" aria-hidden="true"></i>
+                                            <span>Reset</span>
                                         </button>
                                         <button type="submit" class="btn primary">
-                                            <i class="fas fa-save"></i>
-                                            Save Medical Record
+                                            <i class="fas fa-save" aria-hidden="true"></i>
+                                            <span>Save Medical Record</span>
                                         </button>
                                     </div>
                                 </form>
@@ -533,7 +641,7 @@
                 <div id="recordsView" class="dashboard-view hidden">
                     <div class="content-header">
                         <div class="page-title">
-                            <h1><i class="fas fa-file-medical"></i> Medical Records</h1>
+                            <h1><i class="fas fa-file-medical" aria-hidden="true"></i> Medical Records</h1>
                             <p>View and manage all medical records</p>
                         </div>
                     </div>
@@ -541,24 +649,27 @@
                         <div class="records-container">
                             <div class="records-header">
                                 <div class="search-bar">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" id="recordSearch"
-                                        placeholder="Search by patient name, ID, or diagnosis...">
+                                    <label for="recordSearch" class="sr-only">Search medical records</label>
+                                    <i class="fas fa-search" aria-hidden="true"></i>
+                                    <input type="search" 
+                                           id="recordSearch"
+                                           placeholder="Search by patient name, ID, or diagnosis..."
+                                           aria-label="Search medical records">
                                 </div>
                                 <div class="filter-buttons">
-                                    <button class="btn secondary">
-                                        <i class="fas fa-filter"></i>
-                                        Filter
+                                    <button class="btn secondary" aria-label="Filter records">
+                                        <i class="fas fa-filter" aria-hidden="true"></i>
+                                        <span>Filter</span>
                                     </button>
-                                    <button class="btn secondary">
-                                        <i class="fas fa-download"></i>
-                                        Export
+                                    <button class="btn secondary" aria-label="Export records">
+                                        <i class="fas fa-download" aria-hidden="true"></i>
+                                        <span>Export</span>
                                     </button>
                                 </div>
                             </div>
-                            <div class="records-list" id="recordsList">
+                            <div class="records-list" id="recordsList" role="region" aria-label="Medical records list">
                                 <div class="no-records">
-                                    <i class="fas fa-file-medical"></i>
+                                    <i class="fas fa-file-medical" aria-hidden="true"></i>
                                     <h3>No Records Found</h3>
                                     <p>Medical records will appear here once created</p>
                                 </div>
@@ -571,13 +682,13 @@
                 <div id="patientsView" class="dashboard-view hidden">
                     <div class="content-header">
                         <div class="page-title">
-                            <h1><i class="fas fa-users"></i> Patients</h1>
+                            <h1><i class="fas fa-users" aria-hidden="true"></i> Patients</h1>
                             <p>Manage patient information</p>
                         </div>
                     </div>
                     <div class="content-body">
                         <div class="coming-soon">
-                            <i class="fas fa-users"></i>
+                            <i class="fas fa-users" aria-hidden="true"></i>
                             <h2>Patient Management</h2>
                             <p>This feature is coming soon</p>
                         </div>
@@ -588,13 +699,13 @@
                 <div id="analyticsView" class="dashboard-view hidden">
                     <div class="content-header">
                         <div class="page-title">
-                            <h1><i class="fas fa-analytics"></i> Analytics</h1>
+                            <h1><i class="fas fa-chart-bar" aria-hidden="true"></i> Analytics</h1>
                             <p>View system analytics and reports</p>
                         </div>
                     </div>
                     <div class="content-body">
                         <div class="coming-soon">
-                            <i class="fas fa-chart-bar"></i>
+                            <i class="fas fa-chart-bar" aria-hidden="true"></i>
                             <h2>Analytics Dashboard</h2>
                             <p>This feature is coming soon</p>
                         </div>
@@ -605,13 +716,13 @@
                 <div id="settingsView" class="dashboard-view hidden">
                     <div class="content-header">
                         <div class="page-title">
-                            <h1><i class="fas fa-cog"></i> Settings</h1>
+                            <h1><i class="fas fa-cog" aria-hidden="true"></i> Settings</h1>
                             <p>Manage your hospital settings</p>
                         </div>
                     </div>
                     <div class="content-body">
                         <div class="coming-soon">
-                            <i class="fas fa-cogs"></i>
+                            <i class="fas fa-cogs" aria-hidden="true"></i>
                             <h2>System Settings</h2>
                             <p>This feature is coming soon</p>
                         </div>
@@ -620,9 +731,22 @@
             </main>
         </div>
     </section>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
     <script src="app.js"></script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(function(registrationError) {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
 </body>
 
 </html>

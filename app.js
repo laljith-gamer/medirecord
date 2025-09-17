@@ -1,7 +1,4 @@
-// Add this to your HTML before this script:
-// <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
 
-// Supabase MediSecure Configuration
 const SUPABASE_CONFIG = {
   url: "https://cepmacnkmdtdbqagdvtw.supabase.co",
   anonKey:
