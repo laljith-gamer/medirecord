@@ -1,1152 +1,27 @@
+// Supabase Configuration - Replace with your actual credentials
+const SUPABASE_URL = "https://vecyxrpwaaafvkbkqqpl.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlY3l4cnB3YWFhZnZrYmtxcXBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNjc4MDgsImV4cCI6MjA3Mzk0MzgwOH0._4uxQMsFvP4ypRzzwwraIxJTXyIjmuLZlmckcXp6orI";
 
-const SUPABASE_CONFIG = {
-  url: "https://cepmacnkmdtdbqagdvtw.supabase.co",
-  anonKey:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNlcG1hY25rbWR0ZGJxYWdkdnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5OTg1ODgsImV4cCI6MjA3MzU3NDU4OH0.VTjfkwAnk40zUcpu0qTojNOgFRY3W3XrvputrrTM4w0",
-  serviceKey:
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2ZHRzZWR0enNjdnVrenFrd2h5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzQ0ODIxNCwiZXhwIjoyMDY5MDI0MjE0fQ.fjnc4iBavNqfZqvLl5mmOf7aSii1p6tOG4q9aCCqkBU",
-};
-
-class SupabaseMediSecureAPI {
-  constructor() {
-    try {
-      if (typeof supabase === "undefined") {
-        throw new Error(
-          "Supabase library not loaded. Please add the Supabase script to your HTML."
-        );
-      }
-
-      this.supabase = supabase.createClient(
-        SUPABASE_CONFIG.url,
-        SUPABASE_CONFIG.anonKey,
-        {
-          auth: {
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: true,
-          },
-          db: {
-            schema: "public",
-          },
-        }
-      );
-
-      if (
-        SUPABASE_CONFIG.serviceKey &&
-        SUPABASE_CONFIG.serviceKey !== "your-service-role-key-here"
-      ) {
-        this.adminClient = supabase.createClient(
-          SUPABASE_CONFIG.url,
-          SUPABASE_CONFIG.serviceKey,
-          {
-            auth: {
-              autoRefreshToken: false,
-              persistSession: false,
-            },
-          }
-        );
-      }
-
-      this.currentSession = null;
-      this.currentUser = null;
-      this.deviceFingerprint = generateDeviceFingerprint();
-      console.log("✅ Supabase API initialized successfully");
-    } catch (error) {
-      console.error("❌ Failed to initialize Supabase API:", error);
-      throw error;
-    }
-  }
-
-  // Enhanced connection testing with detailed diagnostics
-  async testConnection() {
-    try {
-      console.log("🧪 Testing Supabase connection...");
-
-      const { data: basicTest, error: basicError } = await this.supabase
-        .from("hospitals")
-        .select("hospital_id")
-        .limit(1);
-
-      console.log("📋 Basic connection test:", {
-        data: basicTest,
-        error: basicError,
-      });
-
-      const { data: hospitalData, error: hospitalError } = await this.supabase
-        .from("hospitals")
-        .select("*")
-        .eq("hospital_id", "AIIMS001")
-        .limit(1);
-
-      console.log("🏥 Hospital data test:", {
-        data: hospitalData,
-        error: hospitalError,
-      });
-
-      return {
-        basicConnection: !basicError,
-        hospitalData: hospitalData?.length > 0,
-        errors: {
-          basic: basicError?.message,
-          hospital: hospitalError?.message,
-        },
-      };
-    } catch (error) {
-      console.error("❌ Connection test failed:", error);
-      return {
-        basicConnection: false,
-        hospitalData: false,
-        errors: { general: error.message },
-      };
-    }
-  }
-
-  // FIXED: Complete validateInput function
-  validateInput(input, type) {
-    if (!input || typeof input !== "string") return false;
-
-    const patterns = {
-      hospital_id: /^[A-Z0-9]{6,20}$/,
-      patient_id: /^PAT[0-9]{7,15}$/,
-      email: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/,
-      phone: /^\+?[1-9][0-9]{1,14}$/,
-      password:
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      name: /^[A-Za-z\s]{2,100}$/,
-      license: /^[A-Z0-9/-]{5,50}$/,
-      record_type:
-        /^(consultation|prescription|lab_report|imaging|surgery|vaccination|discharge|emergency)$/i,
-      severity: /^(low|medium|high|critical)$/i,
-    };
-
-    const pattern = patterns[type];
-    if (!pattern) {
-      // Default validation for general text
-      return input.length > 0 && input.length <= 1000 && !/[<>{}]/.test(input);
-    }
-
-    return pattern.test(input.trim());
-  }
-
-  // ADDED: Proper password hashing with bcrypt
-  async hashPassword(password) {
-    try {
-      if (typeof bcrypt === "undefined") {
-        console.warn("bcrypt not loaded, using fallback hashing");
-        return "hashed_" + btoa(password); // Fallback for development
-      }
-      const saltRounds = 12;
-      const hash = await bcrypt.hash(password, saltRounds);
-      return hash;
-    } catch (error) {
-      console.error("Password hashing failed:", error);
-      throw new Error("Failed to secure password");
-    }
-  }
-
-  async verifyPassword(password, hash) {
-    try {
-      if (typeof bcrypt === "undefined") {
-        return hash === "hashed_" + btoa(password); // Fallback for development
-      }
-      return await bcrypt.compare(password, hash);
-    } catch (error) {
-      console.error("Password verification failed:", error);
-      return false;
-    }
-  }
-
-  // Enhanced hospital login with comprehensive error handling
-  async loginHospital(hospitalId, password, geolocation = null) {
-    try {
-      console.log("🔄 Attempting login for hospital:", hospitalId);
-
-      // Enhanced input validation
-      if (!hospitalId || !password) {
-        throw new Error("Hospital ID and password are required");
-      }
-
-      if (!this.validateInput(hospitalId, "hospital_id")) {
-        throw new Error(
-          "Invalid hospital ID format. Use format like: SECURE001"
-        );
-      }
-
-      // Check connection
-      const connectionTest = await this.testConnection();
-      if (!connectionTest.basicConnection) {
-        throw new Error(
-          "Database connection failed. Please check your Supabase configuration."
-        );
-      }
-
-      // Set hospital context for RLS
-      await this.setHospitalContext(hospitalId);
-
-      // Get hospital record
-      const { data: hospital, error: hospitalError } = await this.supabase
-        .from("hospitals")
-        .select("*")
-        .eq("hospital_id", hospitalId)
-        .eq("is_active", true)
-        .single();
-
-      if (hospitalError) {
-        if (hospitalError.code === "PGRST116") {
-          await this.logAuditEvent(
-            "FAILED_LOGIN_ATTEMPT",
-            hospitalId,
-            "Hospital not found"
-          );
-          return {
-            success: false,
-            message: "Invalid credentials",
-            errorCode: "INVALID_CREDENTIALS",
-          };
-        }
-        throw new Error(`Database query failed: ${hospitalError.message}`);
-      }
-
-      if (!hospital) {
-        await this.logAuditEvent(
-          "FAILED_LOGIN_ATTEMPT",
-          hospitalId,
-          "Hospital not found"
-        );
-        return {
-          success: false,
-          message: "Invalid credentials",
-          errorCode: "INVALID_CREDENTIALS",
-        };
-      }
-
-      // Verify password
-      const isPasswordValid = await this.verifyPassword(
-        password,
-        hospital.password_hash
-      );
-
-      if (!isPasswordValid) {
-        await this.logAuditEvent(
-          "FAILED_LOGIN_ATTEMPT",
-          hospitalId,
-          "Invalid password"
-        );
-        return {
-          success: false,
-          message: "Invalid credentials",
-          errorCode: "INVALID_CREDENTIALS",
-        };
-      }
-
-      // Create secure session
-      const sessionData = {
-        success: true,
-        session_token: this.generateSessionToken(),
-        csrf_token: this.generateCSRFToken(),
-        expires_at: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
-        hospital_name: hospital.name,
-        risk_score: this.calculateRiskScore(
-          geolocation,
-          this.deviceFingerprint
-        ),
-        message: "Login successful",
-      };
-
-      // Log successful login
-      await this.logAuditEvent(
-        "SUCCESSFUL_LOGIN",
-        hospitalId,
-        "Hospital login successful"
-      );
-
-      return this.processLoginResponse(sessionData, hospitalId);
-    } catch (error) {
-      console.error("🚨 Login error details:", error);
-      await this.logAuditEvent("LOGIN_ERROR", hospitalId, error.message);
-      return this.formatLoginError(error);
-    }
-  }
-
-  // ADDED: Set hospital context for RLS
-  async setHospitalContext(hospitalId) {
-    try {
-      await this.supabase.rpc("set_hospital_context", {
-        hospital_id: hospitalId,
-      });
-    } catch (error) {
-      console.warn("Failed to set hospital context:", error);
-    }
-  }
-
-  // ADDED: Risk score calculation
-  calculateRiskScore(geolocation, deviceFingerprint) {
-    let riskScore = 1;
-    if (!geolocation) riskScore += 1;
-    const storedFingerprint = localStorage.getItem(
-      `deviceFingerprint_${this.currentSession?.hospitalId}`
-    );
-    if (storedFingerprint && storedFingerprint !== deviceFingerprint) {
-      riskScore += 2;
-    }
-    return Math.min(riskScore, 5);
-  }
-
-  // Process successful login response
-  processLoginResponse(data, hospitalId) {
-    if (data.success) {
-      this.currentSession = {
-        hospitalId: hospitalId,
-        hospitalName: data.hospital_name || hospitalId,
-        sessionToken: data.session_token,
-        csrfToken: data.csrf_token,
-        expiresAt: data.expires_at,
-        riskScore: data.risk_score || 1,
-      };
-
-      // Store device fingerprint
-      localStorage.setItem(
-        `deviceFingerprint_${hospitalId}`,
-        this.deviceFingerprint
-      );
-
-      console.log("✅ Login successful:", this.currentSession);
-      return {
-        success: true,
-        session: this.currentSession,
-        message: data.message || "Login successful",
-        requiresMFA: data.mfa_required || false,
-        passwordWarning: data.password_warning || null,
-      };
-    } else {
-      return {
-        success: false,
-        message: data.message || "Login failed",
-        errorCode: data.error_code || "LOGIN_FAILED",
-      };
-    }
-  }
-
-  // Format login errors with user-friendly messages
-  formatLoginError(error) {
-    let userMessage = "Login service temporarily unavailable";
-    let errorCode = "LOGIN_ERROR";
-
-    if (error.message?.includes("timeout")) {
-      userMessage =
-        "Login request timed out. Please check your connection and try again.";
-      errorCode = "TIMEOUT";
-    } else if (error.message?.includes("Invalid hospital ID")) {
-      userMessage = error.message;
-      errorCode = "INVALID_INPUT";
-    } else if (error.message?.includes("required")) {
-      userMessage = error.message;
-      errorCode = "MISSING_INPUT";
-    } else if (error.message?.includes("configuration")) {
-      userMessage = "Database configuration error. Please contact support.";
-      errorCode = "CONFIG_ERROR";
-    }
-
-    return {
-      success: false,
-      message: userMessage,
-      errorCode: errorCode,
-      technicalError: error.message,
-    };
-  }
-
-  // Hospital verification using Supabase
-  async verifyHospital(hospitalId) {
-    try {
-      if (!this.validateInput(hospitalId, "hospital_id")) {
-        throw new Error("Invalid hospital ID format");
-      }
-
-      console.log("🔍 Verifying hospital:", hospitalId);
-
-      const { data, error } = await this.supabase
-        .from("hospitals")
-        .select(
-          `
-                    hospital_id,
-                    name,
-                    hospital_type,
-                    city,
-                    state,
-                    license_number,
-                    license_expiry,
-                    is_verified,
-                    account_status,
-                    is_active
-                `
-        )
-        .eq("hospital_id", hospitalId)
-        .eq("is_active", true)
-        .single();
-
-      if (error) {
-        if (error.code === "PGRST116") {
-          return { success: false, message: "Hospital not found" };
-        }
-        throw error;
-      }
-
-      if (data && data.account_status === "active") {
-        return {
-          success: true,
-          hospital: {
-            hospital_id: data.hospital_id,
-            name: data.name,
-            hospital_type: data.hospital_type,
-            city: data.city,
-            state: data.state,
-            license_number: data.license_number,
-            license_expiry: data.license_expiry,
-            is_verified: data.is_verified,
-          },
-          message: "Hospital verified successfully",
-        };
-      } else {
-        return { success: false, message: "Hospital account is not active" };
-      }
-    } catch (error) {
-      console.error("Hospital verification error:", error);
-      return { success: false, message: "Error verifying hospital" };
-    }
-  }
-
-  // Enhanced create hospital account with proper password hashing
-  async createHospitalAccount(hospitalData) {
-    try {
-      console.log("🏥 Creating hospital account:", hospitalData.hospitalId);
-
-      // Enhanced validation
-      const requiredFields = [
-        "hospitalId",
-        "password",
-        "adminEmail",
-        "adminPhone",
-      ];
-      for (const field of requiredFields) {
-        if (!hospitalData[field]) {
-          throw new Error(`${field} is required`);
-        }
-      }
-
-      // Validate inputs
-      if (!this.validateInput(hospitalData.hospitalId, "hospital_id")) {
-        throw new Error("Invalid hospital ID format");
-      }
-      if (!this.validateInput(hospitalData.password, "password")) {
-        throw new Error(
-          "Password must be at least 8 characters with uppercase, lowercase, number, and special character"
-        );
-      }
-      if (!this.validateInput(hospitalData.adminEmail, "email")) {
-        throw new Error("Invalid email format");
-      }
-
-      // Hash password securely
-      const hashedPassword = await this.hashPassword(hospitalData.password);
-
-      const { data, error } = await this.supabase
-        .from("hospitals")
-        .insert([
-          {
-            hospital_id: hospitalData.hospitalId,
-            name:
-              hospitalData.hospitalName ||
-              `${hospitalData.hospitalId} Hospital`,
-            hospital_type: hospitalData.hospitalType || "Private",
-            city: hospitalData.city || "Unknown",
-            state: hospitalData.state || "Unknown",
-            license_number:
-              hospitalData.licenseNumber || `LIC-${hospitalData.hospitalId}`,
-            license_expiry:
-              hospitalData.licenseExpiry ||
-              new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0],
-            password_hash: hashedPassword,
-            admin_email_encrypted: await this.encryptSensitiveData(
-              hospitalData.adminEmail
-            ),
-            admin_phone_encrypted: await this.encryptSensitiveData(
-              hospitalData.adminPhone
-            ),
-            account_status: "pending_verification",
-            is_verified: false,
-            is_active: false,
-            created_at: new Date().toISOString(),
-          },
-        ])
-        .select();
-
-      if (error) {
-        if (error.code === "23505") {
-          throw new Error("Hospital account already exists");
-        }
-        throw error;
-      }
-
-      await this.logAuditEvent(
-        "ACCOUNT_CREATED",
-        hospitalData.hospitalId,
-        "Hospital account created"
-      );
-
-      console.log("✅ Hospital account created:", data);
-      return {
-        success: true,
-        message:
-          "Hospital account created successfully. Please wait for admin verification.",
-        hospitalId: hospitalData.hospitalId,
-      };
-    } catch (error) {
-      console.error("Account creation error:", error);
-      await this.logAuditEvent(
-        "ACCOUNT_CREATION_FAILED",
-        hospitalData.hospitalId,
-        error.message
-      );
-      return {
-        success: false,
-        message: error.message || "Failed to create hospital account",
-      };
-    }
-  }
-
-  // Patient verification - enhanced version
-  async verifyPatient(patientId, phone, name) {
-    try {
-      if (!this.validateInput(patientId, "patient_id")) {
-        throw new Error("Invalid patient ID format");
-      }
-
-      console.log("👤 Verifying patient:", patientId);
-
-      const { data: patient, error } = await this.supabase
-        .from("patients")
-        .select("*")
-        .eq("patient_id", patientId)
-        .eq("phone", phone)
-        .eq("is_active", true)
-        .single();
-
-      if (error) {
-        if (error.code === "PGRST116") {
-          return { success: false, message: "Patient not found" };
-        }
-        throw error;
-      }
-
-      // Verify name matches (case insensitive)
-      if (patient.name.toLowerCase() !== name.toLowerCase()) {
-        await this.logAuditEvent(
-          "PATIENT_VERIFICATION_FAILED",
-          patientId,
-          "Name mismatch"
-        );
-        return { success: false, message: "Patient verification failed" };
-      }
-
-      await this.logAuditEvent(
-        "PATIENT_VERIFIED",
-        patientId,
-        "Patient verified successfully"
-      );
-
-      return {
-        success: true,
-        patient: {
-          patient_id: patient.patient_id,
-          name: patient.name,
-          phone: patient.phone,
-          gender: patient.gender || "Not specified",
-          blood_group: patient.blood_group || "Not specified",
-          date_of_birth: patient.date_of_birth,
-          emergency_contact_name: patient.emergency_contact_name,
-          emergency_contact_phone: patient.emergency_contact_phone,
-        },
-        message: "Patient verified successfully",
-      };
-    } catch (error) {
-      console.error("Patient verification error:", error);
-      return { success: false, message: "Error verifying patient" };
-    }
-  }
-
-  // ADDED: File upload to Supabase Storage
-  async uploadAttachment(file, recordNumber) {
-    try {
-      if (!file) throw new Error("No file provided");
-
-      // Validate file type and size
-      const allowedTypes = [
-        "application/pdf",
-        "image/jpeg",
-        "image/png",
-        "image/jpg",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ];
-      const maxSize = 10 * 1024 * 1024; // 10MB
-
-      if (!allowedTypes.includes(file.type)) {
-        throw new Error(
-          "File type not allowed. Only PDF, images, and Word documents are permitted."
-        );
-      }
-
-      if (file.size > maxSize) {
-        throw new Error("File too large. Maximum size is 10MB.");
-      }
-
-      // Generate unique filename
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${
-        this.currentSession.hospitalId
-      }/${recordNumber}/${Date.now()}-${Math.random()
-        .toString(36)
-        .substr(2, 9)}.${fileExt}`;
-
-      // Upload to Supabase Storage
-      const { data, error } = await this.supabase.storage
-        .from("medical-attachments")
-        .upload(fileName, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (error) throw error;
-
-      // Get public URL
-      const { data: urlData } = this.supabase.storage
-        .from("medical-attachments")
-        .getPublicUrl(fileName);
-
-      await this.logAuditEvent(
-        "FILE_UPLOADED",
-        this.currentSession?.hospitalId,
-        `File uploaded: ${fileName}`
-      );
-
-      return {
-        success: true,
-        fileName: fileName,
-        publicUrl: urlData.publicUrl,
-        originalName: file.name,
-        size: file.size,
-        type: file.type,
-      };
-    } catch (error) {
-      console.error("File upload error:", error);
-      return {
-        success: false,
-        message: error.message || "File upload failed",
-      };
-    }
-  }
-
-  // Enhanced create medical record with file attachments
-  async createMedicalRecord(recordData, attachments = []) {
-    try {
-      if (!this.currentSession) {
-        throw new Error("User not authenticated");
-      }
-
-      console.log(
-        "📋 Creating medical record for patient:",
-        recordData.patientId
-      );
-
-      // Enhanced validation
-      const requiredFields = [
-        "patientId",
-        "doctorName",
-        "recordType",
-        "diagnosis",
-      ];
-      for (const field of requiredFields) {
-        if (!recordData[field]) {
-          throw new Error(`${field} is required`);
-        }
-      }
-
-      // Validate input formats
-      if (!this.validateInput(recordData.patientId, "patient_id")) {
-        throw new Error("Invalid patient ID format");
-      }
-      if (!this.validateInput(recordData.recordType, "record_type")) {
-        throw new Error("Invalid record type");
-      }
-      if (!this.validateInput(recordData.severity || "medium", "severity")) {
-        throw new Error("Invalid severity level");
-      }
-
-      const recordNumber =
-        "MR-" +
-        Date.now() +
-        "-" +
-        Math.random().toString(36).substr(2, 9).toUpperCase();
-
-      // Handle file attachments
-      let attachmentUrls = [];
-      if (attachments && attachments.length > 0) {
-        for (const file of attachments) {
-          const uploadResult = await this.uploadAttachment(file, recordNumber);
-          if (uploadResult.success) {
-            attachmentUrls.push({
-              fileName: uploadResult.fileName,
-              originalName: uploadResult.originalName,
-              url: uploadResult.publicUrl,
-              size: uploadResult.size,
-              type: uploadResult.type,
-              uploadedAt: new Date().toISOString(),
-            });
-          } else {
-            console.warn("Failed to upload attachment:", uploadResult.message);
-          }
-        }
-      }
-
-      const recordInsert = {
-        record_number: recordNumber,
-        patient_id: recordData.patientId,
-        hospital_id: this.currentSession.hospitalId,
-        record_type: recordData.recordType,
-        doctor_name: recordData.doctorName,
-        doctor_specialization: recordData.doctorSpecialization || null,
-        diagnosis: await this.encryptSensitiveData(recordData.diagnosis),
-        treatment: recordData.treatment
-          ? await this.encryptSensitiveData(recordData.treatment)
-          : null,
-        medications: recordData.medications
-          ? await this.encryptSensitiveData(recordData.medications)
-          : null,
-        follow_up_date: recordData.followUpDate || null,
-        severity: recordData.severity || "medium",
-        attachments: attachmentUrls.length > 0 ? attachmentUrls : null,
-        notes: recordData.notes
-          ? await this.encryptSensitiveData(recordData.notes)
-          : null,
-        created_at: new Date().toISOString(),
-        can_edit_until: new Date(
-          Date.now() + 24 * 60 * 60 * 1000
-        ).toISOString(),
-        is_editable: true,
-      };
-
-      const { data, error } = await this.supabase
-        .from("medical_records")
-        .insert([recordInsert])
-        .select();
-
-      if (error) throw error;
-
-      await this.logAuditEvent(
-        "RECORD_CREATED",
-        this.currentSession.hospitalId,
-        `Medical record created: ${recordNumber}`
-      );
-
-      console.log("✅ Medical record created:", data[0]);
-      return {
-        success: true,
-        record: data[0],
-        attachments: attachmentUrls,
-        message: "Medical record created successfully",
-      };
-    } catch (error) {
-      console.error("Medical record creation error:", error);
-      await this.logAuditEvent(
-        "RECORD_CREATION_FAILED",
-        this.currentSession?.hospitalId,
-        error.message
-      );
-      return {
-        success: false,
-        message: error.message || "Failed to create medical record",
-      };
-    }
-  }
-
-  // Get medical records for hospital
-  async getMedicalRecords(hospitalId, filters = {}) {
-    try {
-      console.log("📊 Loading medical records for hospital:", hospitalId);
-
-      let query = this.supabase
-        .from("medical_records")
-        .select(
-          `
-                    id,
-                    record_number,
-                    patient_id,
-                    record_type,
-                    severity,
-                    created_at,
-                    status,
-                    doctor_name,
-                    diagnosis,
-                    patients:patient_id (
-                        name,
-                        phone
-                    )
-                `
-        )
-        .eq("hospital_id", hospitalId)
-        .order("created_at", { ascending: false });
-
-      // Apply filters
-      if (filters.recordType) {
-        query = query.eq("record_type", filters.recordType);
-      }
-      if (filters.severity) {
-        query = query.eq("severity", filters.severity);
-      }
-      if (filters.limit) {
-        query = query.limit(filters.limit);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      // Decrypt sensitive data for display
-      const decryptedRecords = await Promise.all(
-        data.map(async (record) => ({
-          ...record,
-          diagnosis: await this.decryptSensitiveData(record.diagnosis),
-        }))
-      );
-
-      console.log(
-        `✅ Retrieved ${decryptedRecords?.length || 0} medical records`
-      );
-      return {
-        success: true,
-        records: decryptedRecords || [],
-        message: "Medical records retrieved successfully",
-      };
-    } catch (error) {
-      console.error("Get medical records error:", error);
-      return {
-        success: false,
-        message: error.message || "Failed to retrieve medical records",
-        records: [],
-      };
-    }
-  }
-
-  // Get dashboard statistics
-  async getDashboardStats(hospitalId) {
-    try {
-      console.log("📈 Loading dashboard stats for hospital:", hospitalId);
-
-      // Get total records count
-      const { count: totalRecords, error: recordsError } = await this.supabase
-        .from("medical_records")
-        .select("*", { count: "exact", head: true })
-        .eq("hospital_id", hospitalId);
-
-      if (recordsError) throw recordsError;
-
-      // Get unique patients count
-      const { data: patientsData, error: patientsError } = await this.supabase
-        .from("medical_records")
-        .select("patient_id")
-        .eq("hospital_id", hospitalId);
-
-      if (patientsError) throw patientsError;
-
-      const uniquePatients = new Set(
-        patientsData?.map((record) => record.patient_id) || []
-      ).size;
-
-      // Get records by severity
-      const { data: severityData, error: severityError } = await this.supabase
-        .from("medical_records")
-        .select("severity")
-        .eq("hospital_id", hospitalId);
-
-      if (severityError) throw severityError;
-
-      const severityStats = (severityData || []).reduce((acc, record) => {
-        acc[record.severity] = (acc[record.severity] || 0) + 1;
-        return acc;
-      }, {});
-
-      console.log("✅ Dashboard stats loaded successfully");
-      return {
-        success: true,
-        stats: {
-          totalRecords: totalRecords || 0,
-          totalPatients: uniquePatients,
-          severityBreakdown: severityStats,
-          lastUpdated: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      console.error("Dashboard stats error:", error);
-      return {
-        success: false,
-        message: error.message || "Failed to retrieve dashboard statistics",
-        stats: {
-          totalRecords: 0,
-          totalPatients: 0,
-          severityBreakdown: {},
-          lastUpdated: new Date().toISOString(),
-        },
-      };
-    }
-  }
-
-  // ADDED: Data encryption for sensitive fields
-  async encryptSensitiveData(data) {
-    if (!data) return null;
-    try {
-      // In production, use proper encryption
-      // For now, using base64 encoding as placeholder
-      return btoa(unescape(encodeURIComponent(data)));
-    } catch (error) {
-      console.error("Encryption error:", error);
-      return data; // Fallback to plain text
-    }
-  }
-
-  async decryptSensitiveData(encryptedData) {
-    if (!encryptedData) return "";
-    try {
-      return decodeURIComponent(escape(atob(encryptedData)));
-    } catch (error) {
-      console.error("Decryption error:", error);
-      return encryptedData; // Fallback to encrypted text
-    }
-  }
-
-  // ADDED: Audit logging system
-  async logAuditEvent(action, entityId, details) {
-    try {
-      const auditEntry = {
-        action: action,
-        entity_type: entityId?.startsWith("PAT") ? "patient" : "hospital",
-        entity_id: entityId,
-        details: details,
-        user_id: this.currentSession?.hospitalId || "system",
-        ip_address: await this.getClientIP(),
-        user_agent: navigator.userAgent,
-        timestamp: new Date().toISOString(),
-        session_id: this.currentSession?.sessionToken,
-      };
-
-      const { error } = await this.supabase
-        .from("audit_logs")
-        .insert([auditEntry]);
-
-      if (error) {
-        console.error("Audit log insert failed:", error);
-      }
-    } catch (error) {
-      console.error("Audit logging error:", error);
-    }
-  }
-
-  // Helper to get client IP
-  async getClientIP() {
-    try {
-      const response = await fetch("https://api.ipify.org?format=json");
-      const data = await response.json();
-      return data.ip;
-    } catch (error) {
-      return "unknown";
-    }
-  }
-
-  // Logout function
-  async logout() {
-    try {
-      console.log("👋 Logging out...");
-
-      if (this.currentSession?.hospitalId) {
-        await this.logAuditEvent(
-          "LOGOUT",
-          this.currentSession.hospitalId,
-          "User logged out"
-        );
-      }
-
-      // Sign out from Supabase auth if used
-      await this.supabase.auth.signOut();
-
-      this.currentSession = null;
-      this.currentUser = null;
-
-      // Clear stored fingerprints
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith("deviceFingerprint_")) {
-          localStorage.removeItem(key);
-        }
-      });
-
-      return { success: true, message: "Logged out successfully" };
-    } catch (error) {
-      console.error("Logout error:", error);
-      return { success: false, message: "Error during logout" };
-    }
-  }
-
-  // Health check function
-  async healthCheck() {
-    try {
-      console.log("🩺 Performing health check...");
-
-      const { data, error } = await this.supabase
-        .from("hospitals")
-        .select("hospital_id")
-        .limit(1);
-
-      if (error) {
-        throw new Error(`Database connection failed: ${error.message}`);
-      }
-
-      console.log("✅ Health check passed");
-      return {
-        success: true,
-        message: "Database connection healthy",
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      console.error("❌ Health check failed:", error);
-      return {
-        success: false,
-        message: error.message || "Health check failed",
-        timestamp: new Date().toISOString(),
-      };
-    }
-  }
-
-  // Utility functions
-  generateCSRFToken() {
-    return Array.from(crypto.getRandomValues(new Uint8Array(16)))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
-
-  generateSessionToken() {
-    return Array.from(crypto.getRandomValues(new Uint8Array(32)))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
-
-  generateSalt() {
-    return Array.from(crypto.getRandomValues(new Uint8Array(32)))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
-
-  generateChecksum(data) {
-    const str = JSON.stringify(data);
-    return Array.from(crypto.getRandomValues(new Uint8Array(16)))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
-
-  generateIntegrityHash(identifier) {
-    return Array.from(crypto.getRandomValues(new Uint8Array(32)))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
-
-  // Get current location for risk assessment
-  async getCurrentLocation() {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        resolve(null);
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-          });
-        },
-        () => resolve(null),
-        { timeout: 5000, enableHighAccuracy: false }
-      );
-    });
-  }
-}
-
-// Generate device fingerprint
-function generateDeviceFingerprint() {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  ctx.textBaseline = "top";
-  ctx.font = "14px Arial";
-  ctx.fillText("MediSecure fingerprint", 2, 2);
-
-  const fingerprint = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width,
-    screen.height,
-    new Date().getTimezoneOffset(),
-    canvas.toDataURL(),
-  ].join("|");
-
-  return btoa(fingerprint).slice(0, 32);
-}
-
-// Initialize database API
-let supabaseAPI;
-let isDBInitialized = false;
-
-function initializeDatabase() {
+// Initialize Supabase with comprehensive error handling
+let supabase;
+let isSupabaseInitialized = false;
+
+function initializeSupabase() {
   try {
-    if (typeof supabase === "undefined") {
-      throw new Error("Supabase library not loaded. Add to your HTML.");
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      throw new Error("Please update Supabase credentials in app.js");
     }
 
-    supabaseAPI = new SupabaseMediSecureAPI();
-    isDBInitialized = true;
-    console.log("✅ Supabase API initialized successfully");
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    isSupabaseInitialized = true;
+    console.log("âœ… Supabase initialized successfully");
     return true;
   } catch (error) {
-    console.error("❌ Failed to initialize Supabase API:", error);
-    showConnectionStatus(`Initialization failed: ${error.message}`, "error");
+    console.error("âŒ Failed to initialize Supabase:", error);
+    showConnectionStatus("Failed to initialize database connection", "error");
     return false;
-  }
-}
-
-// Diagnostic function for troubleshooting
-async function diagnoseIssue() {
-  try {
-    console.log("🔍 Starting diagnostic...");
-    const results = await supabaseAPI.testConnection();
-    console.log("🔍 Diagnosis results:", results);
-
-    if (!results.basicConnection) {
-      console.error("❌ Basic Supabase connection failed");
-      showConnectionStatus("Database connection failed", "error");
-    } else {
-      console.log("✅ Basic connection working");
-    }
-
-    if (!results.hospitalData) {
-      console.warn("⚠️ No hospital data found");
-      showConnectionStatus("No sample data found", "warning");
-    } else {
-      console.log("✅ Hospital data available");
-    }
-
-    return results;
-  } catch (error) {
-    console.error("❌ Diagnostic failed:", error);
-    return null;
   }
 }
 
@@ -1156,7 +31,16 @@ function showConnectionStatus(message, type = "info", duration = 3000) {
   if (!statusDiv) return;
 
   statusDiv.className = `connection-status ${type}`;
-  statusDiv.innerHTML = `${message}`;
+  statusDiv.innerHTML = `
+        <i class="fas fa-${
+          type === "success"
+            ? "check"
+            : type === "error"
+            ? "times"
+            : "info-circle"
+        }"></i>
+        <span>${message}</span>
+    `;
   statusDiv.classList.remove("hidden");
 
   if (duration > 0) {
@@ -1177,7 +61,7 @@ function hideLoadingScreen() {
   }
 }
 
-// Main Application Class (Enhanced)
+// Main Application Class
 class MediSecureApp {
   constructor() {
     this.currentSection = "signup";
@@ -1188,22 +72,23 @@ class MediSecureApp {
     this.autoSearchTimeout = null;
     this.connectionRetryCount = 0;
     this.maxRetries = 3;
-    this.deviceFingerprint = generateDeviceFingerprint();
-    this.selectedFiles = [];
+
     this.initializeApp();
   }
 
   async initializeApp() {
-    console.log("🚀 Initializing MediSecure App with Supabase...");
+    console.log("ðŸš€ Initializing MediSecure App...");
+
+    // Show connection status
     showConnectionStatus("Initializing application...", "info", 0);
 
-    // Initialize Supabase API
-    if (!initializeDatabase()) {
+    // Initialize Supabase
+    if (!initializeSupabase()) {
       this.handleConnectionError();
       return;
     }
 
-    // Test Supabase connection with diagnostics
+    // Test database connection
     const connectionSuccess = await this.testDatabaseConnection();
     if (!connectionSuccess) {
       this.handleConnectionError();
@@ -1218,30 +103,71 @@ class MediSecureApp {
 
     showConnectionStatus("Application ready!", "success");
     hideLoadingScreen();
-    console.log("✅ MediSecure App with Supabase initialized successfully");
+    console.log("âœ… MediSecure App initialized successfully");
   }
 
   async testDatabaseConnection() {
-    showConnectionStatus("Testing Supabase connection...", "info", 0);
+    showConnectionStatus("Testing database connection...", "info", 0);
+
     try {
-      console.log("🔌 Testing Supabase connection...");
-      const diagnostic = await diagnoseIssue();
-      if (diagnostic && diagnostic.basicConnection) {
-        console.log("✅ Supabase connection successful");
-        showConnectionStatus("Supabase connected successfully!", "success");
-        return true;
-      } else {
-        throw new Error("Connection diagnostic failed");
+      console.log("ðŸ”Œ Testing Supabase connection...");
+      console.log("ðŸ“ URL:", SUPABASE_URL);
+      console.log("ðŸ”‘ Key exists:", !!SUPABASE_ANON_KEY);
+
+      // Test basic connection with timeout
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Connection timeout")), 10000)
+      );
+
+      const connectionPromise = supabase
+        .from("hospitals")
+        .select("hospital_id")
+        .limit(1);
+
+      const { data, error } = await Promise.race([
+        connectionPromise,
+        timeoutPromise,
+      ]);
+
+      if (error) {
+        console.error("âŒ Database connection failed:", error);
+        this.handleSpecificError(error);
+        return false;
       }
+
+      console.log("âœ… Database connection successful");
+      showConnectionStatus("Database connected successfully!", "success");
+      return true;
     } catch (error) {
-      console.error("❌ Supabase connection test error:", error);
+      console.error("âŒ Connection test error:", error);
       this.handleConnectionError(error);
       return false;
     }
   }
 
+  handleSpecificError(error) {
+    let message = "Database connection failed";
+
+    if (error.message.includes("Invalid API key")) {
+      message = "Invalid database credentials. Please check your API key.";
+    } else if (error.message.includes("not found")) {
+      message = "Database table not found. Please check your database setup.";
+    } else if (error.message.includes("CORS")) {
+      message = "CORS error. Please check your domain settings in Supabase.";
+    } else if (error.message.includes("timeout")) {
+      message = "Connection timeout. Please check your internet connection.";
+    } else if (error.message.includes("fetch")) {
+      message = "Network error. Please check your internet connection.";
+    } else {
+      message = `Database error: ${error.message}`;
+    }
+
+    showConnectionStatus(message, "error", 10000);
+  }
+
   handleConnectionError(error) {
     this.connectionRetryCount++;
+
     if (this.connectionRetryCount <= this.maxRetries) {
       showConnectionStatus(
         `Connection failed. Retrying... (${this.connectionRetryCount}/${this.maxRetries})`,
@@ -1251,7 +177,7 @@ class MediSecureApp {
       setTimeout(() => this.testDatabaseConnection(), 3000);
     } else {
       showConnectionStatus(
-        "Unable to connect to Supabase. Check your configuration and try refreshing.",
+        "Unable to connect to database. Please refresh the page.",
         "error",
         0
       );
@@ -1260,10 +186,13 @@ class MediSecureApp {
   }
 
   showOfflineMode() {
+    // Show offline mode notification
     this.showNotification(
-      "Application is running in offline mode. Supabase connection required for full functionality.",
+      "Application is running in offline mode. Some features may not work.",
       "error"
     );
+
+    // Still initialize the UI
     this.initializeEventListeners();
     hideLoadingScreen();
     this.showSignup();
@@ -1271,28 +200,21 @@ class MediSecureApp {
 
   async checkExistingSession() {
     const sessionData =
-      localStorage.getItem("mediSecureSession") ||
-      sessionStorage.getItem("mediSecureSession");
+      localStorage.getItem("hospitalSession") ||
+      sessionStorage.getItem("hospitalSession");
     if (sessionData) {
       try {
-        const session = JSON.parse(sessionData);
-        if (
-          session.sessionToken &&
-          session.expiresAt &&
-          new Date(session.expiresAt) > new Date()
-        ) {
-          this.currentSession = session;
-          supabaseAPI.currentSession = session;
-          await this.showDashboard();
-          return;
-        }
+        this.currentSession = JSON.parse(sessionData);
+        await this.showDashboard();
       } catch (error) {
         console.error("Error parsing session data:", error);
+        localStorage.removeItem("hospitalSession");
+        sessionStorage.removeItem("hospitalSession");
+        this.showSignup();
       }
-      localStorage.removeItem("mediSecureSession");
-      sessionStorage.removeItem("mediSecureSession");
+    } else {
+      this.showSignup();
     }
-    this.showSignup();
   }
 
   initializeEventListeners() {
@@ -1353,7 +275,7 @@ class MediSecureApp {
         this.handleFileSelection(e)
       );
 
-    // Auto-verify patient when all fields are filled
+    // Auto-verify when all fields are filled
     const patientIdInput = document.getElementById("patientId");
     const patientPhoneInput = document.getElementById("patientPhone");
     const patientNameInput = document.getElementById("patientName");
@@ -1397,7 +319,7 @@ class MediSecureApp {
     this.currentSection = "dashboard";
     if (this.currentSession) {
       document.getElementById("dashboardHospitalName").textContent =
-        this.currentSession.hospitalName || this.currentSession.hospitalId;
+        this.currentSession.hospitalName;
       document.getElementById(
         "dashboardHospitalId"
       ).textContent = `ID: ${this.currentSession.hospitalId}`;
@@ -1413,427 +335,9 @@ class MediSecureApp {
     document.getElementById("dashboardSection").classList.add("hidden");
   }
 
-  resetForms() {
-    const signupForm = document.getElementById("signupForm");
-    if (signupForm) signupForm.reset();
-    const loginForm = document.getElementById("loginForm");
-    if (loginForm) loginForm.reset();
-
-    // Hide verification cards and forms
-    const hospitalInfo = document.getElementById("hospitalInfo");
-    const passwordSection = document.getElementById("passwordSection");
-    const patientVerifiedCard = document.getElementById("patientVerifiedCard");
-    const addRecordForm = document.getElementById("addRecordForm");
-
-    if (hospitalInfo) hospitalInfo.classList.add("hidden");
-    if (passwordSection) passwordSection.classList.add("hidden");
-    if (patientVerifiedCard) patientVerifiedCard.classList.add("hidden");
-    if (addRecordForm) addRecordForm.classList.add("hidden");
-
-    this.verifiedPatient = null;
-    this.hospitalData = null;
-    this.selectedFiles = [];
-    this.clearFilesList();
-  }
-
-  // Hospital Verification
-  async verifyHospital() {
-    const hospitalIdInput = document.getElementById("hospitalId");
-    const verifyBtn = document.getElementById("verifyBtn");
-    const hospitalId = hospitalIdInput.value.trim();
-
-    if (!hospitalId) {
-      this.showNotification("Please enter a hospital ID", "error");
-      return;
-    }
-
-    try {
-      verifyBtn.disabled = true;
-      verifyBtn.innerHTML =
-        '<i class="fas fa-spinner fa-spin"></i> Verifying...';
-
-      const response = await supabaseAPI.verifyHospital(hospitalId);
-
-      if (response.success) {
-        this.hospitalData = response.hospital;
-        this.displayHospitalInfo(response.hospital);
-        this.showNotification("Hospital verified successfully!", "success");
-      } else {
-        this.showNotification(
-          response.message || "Hospital not found",
-          "error"
-        );
-      }
-    } catch (error) {
-      console.error("Hospital verification error:", error);
-      this.showNotification(
-        "Error verifying hospital. Please try again.",
-        "error"
-      );
-    } finally {
-      verifyBtn.disabled = false;
-      verifyBtn.innerHTML = '<i class="fas fa-check"></i> Verify';
-    }
-  }
-
-  displayHospitalInfo(hospital) {
-    document.getElementById("hospitalName").textContent = hospital.name;
-    document.getElementById(
-      "hospitalLocation"
-    ).textContent = `${hospital.city}, ${hospital.state}`;
-    document.getElementById("hospitalType").textContent =
-      hospital.hospital_type;
-    document.getElementById(
-      "hospitalLicense"
-    ).textContent = `License: ${hospital.license_number}`;
-    document.getElementById("hospitalInfo").classList.remove("hidden");
-    document.getElementById("passwordSection").classList.remove("hidden");
-  }
-
-  // Enhanced Signup Handler
-  async handleSignup(e) {
-    e.preventDefault();
-    if (!this.hospitalData) {
-      this.showNotification("Please verify your hospital first", "error");
-      return;
-    }
-
-    const formData = new FormData(e.target);
-    const password = formData.get("password");
-    const confirmPassword = formData.get("confirmPassword");
-
-    if (password !== confirmPassword) {
-      this.showNotification("Passwords do not match", "error");
-      return;
-    }
-
-    if (!this.checkPasswordStrength(password)) {
-      this.showNotification("Password does not meet requirements", "error");
-      return;
-    }
-
-    try {
-      const signupData = {
-        hospitalId: this.hospitalData.hospital_id,
-        hospitalName: this.hospitalData.name,
-        password: password,
-        adminEmail: formData.get("adminEmail"),
-        adminPhone: formData.get("adminPhone"),
-        acceptTerms: formData.get("acceptTerms") === "on",
-      };
-
-      const response = await supabaseAPI.createHospitalAccount(signupData);
-
-      if (response.success) {
-        this.showNotification(
-          "Account created successfully! Please sign in.",
-          "success"
-        );
-        setTimeout(() => this.showLogin(), 2000);
-      } else {
-        this.showNotification(
-          response.message || "Account creation failed",
-          "error"
-        );
-      }
-    } catch (error) {
-      console.error("Signup error:", error);
-      this.showNotification(
-        "Error creating account. Please try again.",
-        "error"
-      );
-    }
-  }
-
-  // Enhanced Login Handler
-  async handleLogin(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const hospitalId = formData.get("hospitalId");
-    const password = formData.get("password");
-    const rememberMe = formData.get("rememberMe") === "on";
-
-    if (!hospitalId || !password) {
-      this.showNotification(
-        "Please enter both hospital ID and password",
-        "error"
-      );
-      return;
-    }
-
-    try {
-      const loginBtn = e.target.querySelector('button[type="submit"]');
-      loginBtn.disabled = true;
-      loginBtn.innerHTML =
-        '<i class="fas fa-spinner fa-spin"></i> Signing In...';
-
-      const geolocation = await supabaseAPI.getCurrentLocation();
-      console.log("🔐 Attempting login with credentials:", {
-        hospitalId,
-        password: "***",
-      });
-
-      const response = await supabaseAPI.loginHospital(
-        hospitalId,
-        password,
-        geolocation
-      );
-      console.log("📊 Login response:", response);
-
-      if (response.success) {
-        const sessionData = {
-          hospitalId: hospitalId,
-          hospitalName: response.session.hospitalName || hospitalId,
-          sessionToken: response.session.sessionToken,
-          csrfToken: response.session.csrfToken,
-          expiresAt: response.session.expiresAt,
-          riskScore: response.session.riskScore,
-        };
-
-        if (rememberMe) {
-          localStorage.setItem(
-            "mediSecureSession",
-            JSON.stringify(sessionData)
-          );
-        } else {
-          sessionStorage.setItem(
-            "mediSecureSession",
-            JSON.stringify(sessionData)
-          );
-        }
-
-        this.currentSession = sessionData;
-
-        if (response.requiresMFA) {
-          this.showNotification("MFA verification required", "info");
-          // Handle MFA flow here
-        } else {
-          this.showNotification("Login successful!", "success");
-          await this.showDashboard();
-        }
-
-        if (response.passwordWarning) {
-          this.showNotification(response.passwordWarning, "warning");
-        }
-      } else {
-        this.showNotification(response.message || "Login failed", "error");
-        if (response.technicalError) {
-          console.error("Technical error:", response.technicalError);
-        }
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      this.showNotification("Error during login. Please try again.", "error");
-    } finally {
-      const loginBtn = e.target.querySelector('button[type="submit"]');
-      loginBtn.disabled = false;
-      loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
-    }
-  }
-
-  // Patient Verification
-  async verifyPatient() {
-    const patientId = document.getElementById("patientId").value.trim();
-    const patientPhone = document.getElementById("patientPhone").value.trim();
-    const patientName = document.getElementById("patientName").value.trim();
-
-    if (!patientId || !patientPhone || !patientName) {
-      this.showNotification(
-        "Please fill all patient verification fields",
-        "error"
-      );
-      return;
-    }
-
-    try {
-      const verifyBtn = document.getElementById("verifyPatientBtn");
-      verifyBtn.disabled = true;
-      verifyBtn.innerHTML =
-        '<i class="fas fa-spinner fa-spin"></i> Verifying...';
-
-      const response = await supabaseAPI.verifyPatient(
-        patientId,
-        patientPhone,
-        patientName
-      );
-
-      if (response.success) {
-        this.verifiedPatient = response.patient;
-        this.displayPatientInfo(response.patient);
-        this.showNotification("Patient verified successfully!", "success");
-      } else {
-        this.showNotification(
-          response.message || "Patient verification failed",
-          "error"
-        );
-      }
-    } catch (error) {
-      console.error("Patient verification error:", error);
-      this.showNotification(
-        "Error verifying patient. Please try again.",
-        "error"
-      );
-    } finally {
-      const verifyBtn = document.getElementById("verifyPatientBtn");
-      verifyBtn.disabled = false;
-      verifyBtn.innerHTML = '<i class="fas fa-user-check"></i> Verify Patient';
-    }
-  }
-
-  displayPatientInfo(patient) {
-    document.getElementById("verifiedPatientId").textContent =
-      patient.patient_id;
-    document.getElementById("verifiedPatientName").textContent = patient.name;
-    document.getElementById("verifiedPatientPhone").textContent = patient.phone;
-    document.getElementById("verifiedPatientGender").textContent =
-      patient.gender || "Not specified";
-    document.getElementById("verifiedPatientBloodGroup").textContent =
-      patient.blood_group || "Not specified";
-    document.getElementById("patientVerifiedCard").classList.remove("hidden");
-    document.getElementById("addRecordForm").classList.remove("hidden");
-  }
-
-  // Auto verify patient when all fields are filled
-  autoVerifyPatient() {
-    clearTimeout(this.autoSearchTimeout);
-    const patientId = document.getElementById("patientId").value.trim();
-    const patientPhone = document.getElementById("patientPhone").value.trim();
-    const patientName = document.getElementById("patientName").value.trim();
-
-    if (patientId && patientPhone && patientName) {
-      this.autoSearchTimeout = setTimeout(() => {
-        this.verifyPatient();
-      }, 1500);
-    }
-  }
-
-  // File selection handler
-  handleFileSelection(e) {
-    const files = Array.from(e.target.files);
-    this.selectedFiles = [...this.selectedFiles, ...files];
-    this.displayFilesList();
-  }
-
-  displayFilesList() {
-    const filesList = document.getElementById("filesList");
-    if (!filesList) return;
-
-    filesList.innerHTML = "";
-    this.selectedFiles.forEach((file, index) => {
-      const fileItem = document.createElement("div");
-      fileItem.className = "file-item";
-      fileItem.innerHTML = `
-                <div class="file-info">
-                    <i class="fas fa-file"></i>
-                    <span>${file.name}</span>
-                    <span class="file-size">(${(file.size / 1024).toFixed(
-                      2
-                    )} KB)</span>
-                </div>
-                <button type="button" class="remove-file" onclick="app.removeFile(${index})">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-      filesList.appendChild(fileItem);
-    });
-  }
-
-  removeFile(index) {
-    this.selectedFiles.splice(index, 1);
-    this.displayFilesList();
-  }
-
-  clearFilesList() {
-    this.selectedFiles = [];
-    const filesList = document.getElementById("filesList");
-    if (filesList) filesList.innerHTML = "";
-    const attachmentsInput = document.getElementById("attachments");
-    if (attachmentsInput) attachmentsInput.value = "";
-  }
-
-  // Enhanced Medical Record Handler
-  async handleAddRecord(e) {
-    e.preventDefault();
-    if (!this.verifiedPatient) {
-      this.showNotification("Please verify patient first", "error");
-      return;
-    }
-
-    const formData = new FormData(e.target);
-    const recordData = {
-      patientId: this.verifiedPatient.patient_id,
-      hospitalId: this.currentSession.hospitalId,
-      doctorName: formData.get("doctorName"),
-      doctorSpecialization: formData.get("doctorSpecialization"),
-      recordType: formData.get("recordType"),
-      severity: formData.get("severity"),
-      diagnosis: formData.get("diagnosis"),
-      treatment: formData.get("treatment"),
-      medications: formData.get("medications"),
-      followUpDate: formData.get("followUpDate"),
-      notes: formData.get("notes"),
-    };
-
-    try {
-      const submitBtn = e.target.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-
-      const response = await supabaseAPI.createMedicalRecord(
-        recordData,
-        this.selectedFiles
-      );
-
-      if (response.success) {
-        this.showNotification("Medical record saved successfully!", "success");
-        this.resetRecordForm();
-        await this.loadDashboardStats();
-
-        if (response.attachments && response.attachments.length > 0) {
-          this.showNotification(
-            `${response.attachments.length} file(s) uploaded successfully`,
-            "info"
-          );
-        }
-      } else {
-        this.showNotification(
-          response.message || "Error saving medical record",
-          "error"
-        );
-      }
-    } catch (error) {
-      console.error("Add record error:", error);
-      this.showNotification(
-        "Error saving medical record. Please try again.",
-        "error"
-      );
-    } finally {
-      const submitBtn = e.target.querySelector('button[type="submit"]');
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Medical Record';
-    }
-  }
-
-  resetRecordForm() {
-    const addRecordForm = document.getElementById("addRecordForm");
-    const patientVerifiedCard = document.getElementById("patientVerifiedCard");
-
-    if (addRecordForm) {
-      addRecordForm.reset();
-      addRecordForm.classList.add("hidden");
-    }
-    if (patientVerifiedCard) patientVerifiedCard.classList.add("hidden");
-
-    // Reset patient verification fields
-    document.getElementById("patientId").value = "";
-    document.getElementById("patientPhone").value = "";
-    document.getElementById("patientName").value = "";
-    this.verifiedPatient = null;
-    this.clearFilesList();
-  }
-
   // Dashboard view switching
   switchDashboardView(view) {
+    // Update current view
     this.currentDashboardView = view;
 
     // Hide all dashboard views
@@ -1871,43 +375,36 @@ class MediSecureApp {
       case "records":
         await this.loadMedicalRecords();
         break;
-      case "dashboard":
-        await this.loadDashboardStats();
+      case "patients":
+        // Load patients data
+        break;
+      case "analytics":
+        // Load analytics data
+        break;
+      case "settings":
+        // Load settings
         break;
     }
   }
 
-  async loadDashboardStats() {
-    try {
-      if (!this.currentSession) return;
-
-      const response = await supabaseAPI.getDashboardStats(
-        this.currentSession.hospitalId
-      );
-      if (response.success) {
-        document.getElementById("totalRecords").textContent =
-          response.stats.totalRecords || "0";
-        document.getElementById("totalPatients").textContent =
-          response.stats.totalPatients || "0";
-      }
-    } catch (error) {
-      console.error("Error loading dashboard stats:", error);
-    }
-  }
-
   async loadMedicalRecords() {
-    try {
-      if (!this.currentSession) return;
+    if (!this.checkDatabaseAvailability()) return;
 
-      const response = await supabaseAPI.getMedicalRecords(
-        this.currentSession.hospitalId,
-        { limit: 50 }
-      );
-      if (response.success) {
-        this.displayMedicalRecords(response.records);
-      } else {
-        console.error("Error loading medical records:", response.message);
-      }
+    try {
+      const { data, error } = await supabase
+        .from("medical_records")
+        .select(
+          `
+                    *,
+                    patients!inner(name, phone)
+                `
+        )
+        .eq("hospital_id", this.currentSession.hospitalId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      this.displayMedicalRecords(data);
     } catch (error) {
       console.error("Error loading medical records:", error);
       this.showNotification("Error loading medical records", "error");
@@ -1922,7 +419,7 @@ class MediSecureApp {
       recordsList.innerHTML = `
                 <div class="no-records">
                     <i class="fas fa-folder-open"></i>
-                    <h3>No Records Found</h3>
+                    <h3>No records found</h3>
                     <p>Medical records will appear here once created</p>
                 </div>
             `;
@@ -1932,19 +429,36 @@ class MediSecureApp {
     recordsList.innerHTML = records
       .map(
         (record) => `
-            <div class="record-item">
-                <div class="record-header">
-                    <h4>${record.record_type.toUpperCase()}</h4>
-                    <span class="record-type">${record.severity}</span>
+            <div class="record-item" style="background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 3px 6px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+                <div class="record-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h4 style="margin: 0; color: #2d3748; font-size: 1.2rem;">${
+                      record.patients.name
+                    }</h4>
+                    <span class="record-type" style="background: #667eea; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; text-transform: capitalize;">${record.record_type.replace(
+                      "_",
+                      " "
+                    )}</span>
                 </div>
-                <div class="record-details">
-                    <p><strong>Patient ID:</strong> ${record.patient_id}</p>
-                    <p><strong>Doctor:</strong> ${record.doctor_name}</p>
-                    <p><strong>Diagnosis:</strong> ${record.diagnosis}</p>
-                    <p><strong>Date:</strong> ${new Date(
+                <div class="record-details" style="margin-bottom: 1rem;">
+                    <p style="margin: 0.25rem 0;"><strong>Diagnosis:</strong> ${
+                      record.diagnosis
+                    }</p>
+                    <p style="margin: 0.25rem 0;"><strong>Doctor:</strong> ${
+                      record.doctor_name
+                    }</p>
+                    <p style="margin: 0.25rem 0;"><strong>Date:</strong> ${new Date(
                       record.created_at
                     ).toLocaleDateString()}</p>
-                    <p><strong>Record #:</strong> ${record.record_number}</p>
+                    <p style="margin: 0.25rem 0;"><strong>Severity:</strong> <span style="color: ${this.getSeverityColor(
+                      record.severity
+                    )}">${record.severity}</span></p>
+                </div>
+                <div class="record-actions">
+                    <button class="btn secondary" onclick="app.viewRecord('${
+                      record.id
+                    }')" style="padding: 0.5rem 1rem; border: 1px solid #e2e8f0; background: #f7fafc; border-radius: 8px; cursor: pointer;">
+                        <i class="fas fa-eye"></i> View Details
+                    </button>
                 </div>
             </div>
         `
@@ -1952,166 +466,808 @@ class MediSecureApp {
       .join("");
   }
 
-  // Logout handler
-  async handleLogout() {
-    if (confirm("Are you sure you want to logout?")) {
-      try {
-        const response = await supabaseAPI.logout();
-        if (response.success) {
-          // Clear all stored sessions
-          localStorage.removeItem("mediSecureSession");
-          sessionStorage.removeItem("mediSecureSession");
-
-          this.currentSession = null;
-          this.showNotification("Logged out successfully", "success");
-          this.showLogin();
-        } else {
-          this.showNotification("Error during logout", "error");
-        }
-      } catch (error) {
-        console.error("Logout error:", error);
-        this.showNotification("Error during logout", "error");
-      }
+  getSeverityColor(severity) {
+    switch (severity) {
+      case "Low":
+        return "#48bb78";
+      case "Medium":
+        return "#ed8936";
+      case "High":
+        return "#f56565";
+      case "Critical":
+        return "#e53e3e";
+      default:
+        return "#718096";
     }
   }
 
-  // Password strength checker
-  checkPasswordStrength(password) {
-    const pwd = password || document.getElementById("password").value;
-    const strengthBar = document.querySelector(".strength-bar");
-    const strengthText = document.querySelector(".strength-text");
-
-    if (!strengthBar || !strengthText) return true;
-
-    let strength = 0;
-    let feedback = [];
-
-    if (pwd.length >= 8) strength++;
-    else feedback.push("At least 8 characters");
-
-    if (/[a-z]/.test(pwd)) strength++;
-    else feedback.push("One lowercase letter");
-
-    if (/[A-Z]/.test(pwd)) strength++;
-    else feedback.push("One uppercase letter");
-
-    if (/\d/.test(pwd)) strength++;
-    else feedback.push("One number");
-
-    if (/[@$!%*?&]/.test(pwd)) strength++;
-    else feedback.push("One special character");
-
-    const levels = ["weak", "weak", "fair", "good", "strong"];
-    const level = levels[strength];
-
-    strengthBar.className = `strength-bar ${level}`;
-    strengthText.textContent =
-      feedback.length > 0
-        ? `Missing: ${feedback.join(", ")}`
-        : "Strong password";
-    strengthText.className = `strength-text ${level}`;
-
-    return strength >= 4;
+  viewRecord(recordId) {
+    this.showNotification("Record details view coming soon!", "info");
   }
 
-  // Password match validation
-  validatePasswordMatch() {
-    const password = document.getElementById("password").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
-    const confirmInput = document.getElementById("confirmPassword");
+  resetForms() {
+    const forms = document.querySelectorAll("form");
+    forms.forEach((form) => form.reset());
 
-    if (confirmPassword) {
-      if (password === confirmPassword) {
-        confirmInput.style.borderColor = "#48bb78";
-        return true;
-      } else {
-        confirmInput.style.borderColor = "#f56565";
-        return false;
-      }
+    const statusMessages = document.querySelectorAll(".status-message");
+    statusMessages.forEach((msg) => (msg.textContent = ""));
+
+    const detailSections = document.querySelectorAll(
+      ".hospital-card, .patient-verified-card"
+    );
+    detailSections.forEach((section) => section.classList.add("hidden"));
+
+    const passwordSection = document.getElementById("passwordSection");
+    if (passwordSection) passwordSection.classList.add("hidden");
+
+    const medicalDetailsCard = document.getElementById("medicalDetailsCard");
+    if (medicalDetailsCard) medicalDetailsCard.style.display = "none";
+
+    const filesList = document.getElementById("filesList");
+    if (filesList) filesList.innerHTML = "";
+
+    // Reset verify button
+    const verifyBtn = document.getElementById("verifyPatientBtn");
+    if (verifyBtn) {
+      verifyBtn.innerHTML = '<i class="fas fa-search"></i> Verify Patient';
+      verifyBtn.classList.remove("success");
+      verifyBtn.disabled = false;
+    }
+
+    this.hospitalData = null;
+    this.verifiedPatient = null;
+  }
+
+  // Check database availability before operations
+  checkDatabaseAvailability() {
+    if (!isSupabaseInitialized) {
+      this.showNotification(
+        "Database connection not available. Please refresh the page.",
+        "error"
+      );
+      return false;
     }
     return true;
   }
 
-  // Toggle password visibility
-  togglePasswordVisibility(inputId, buttonId) {
+  // Signup Methods
+  async verifyHospital() {
+    if (!this.checkDatabaseAvailability()) return;
+
+    const hospitalId = document
+      .getElementById("hospitalId")
+      .value.trim()
+      .toUpperCase();
+    const statusDiv = document.getElementById("hospitalIdStatus");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const hospitalDetailsDiv = document.getElementById("hospitalDetails");
+    const passwordSection = document.getElementById("passwordSection");
+
+    if (!hospitalId) {
+      this.showStatus(statusDiv, "Please enter Hospital ID", "error");
+      return;
+    }
+
+    verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+    verifyBtn.disabled = true;
+
+    try {
+      const { data, error } = await supabase
+        .from("hospitals")
+        .select("*")
+        .eq("hospital_id", hospitalId)
+        .single();
+
+      if (error || !data) {
+        this.showStatus(
+          statusDiv,
+          "Hospital ID not found. Please check and try again.",
+          "error"
+        );
+        return;
+      }
+
+      if (!data.is_verified) {
+        this.showStatus(
+          statusDiv,
+          "Hospital is not verified. Please contact administration.",
+          "error"
+        );
+        return;
+      }
+
+      this.hospitalData = data;
+      this.showStatus(statusDiv, "Hospital verified successfully!", "success");
+      this.displayHospitalDetails(data);
+      hospitalDetailsDiv.classList.remove("hidden");
+      passwordSection.classList.remove("hidden");
+      passwordSection.scrollIntoView({ behavior: "smooth" });
+    } catch (error) {
+      console.error("Verification error:", error);
+      this.showStatus(
+        statusDiv,
+        "Error verifying hospital. Please try again.",
+        "error"
+      );
+    } finally {
+      verifyBtn.innerHTML = '<i class="fas fa-search"></i> Verify';
+      verifyBtn.disabled = false;
+    }
+  }
+
+  displayHospitalDetails(hospital) {
+    document.getElementById("hospitalName").textContent = hospital.name;
+    document.getElementById(
+      "hospitalLocation"
+    ).textContent = `${hospital.city}, ${hospital.state}`;
+    document.getElementById("hospitalType").textContent =
+      hospital.hospital_type;
+    document.getElementById("hospitalLicense").textContent =
+      hospital.license_number;
+  }
+
+  checkPasswordStrength() {
+    const password = document.getElementById("password").value;
+    const strengthBar = document.getElementById("strengthBar");
+    const strengthText = document.getElementById("strengthText");
+
+    let strength = 0;
+    let feedback = "";
+
+    if (password.length >= 8) strength += 1;
+    if (/[a-z]/.test(password)) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[0-9]/.test(password)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+
+    strengthBar.className = "strength-bar";
+    switch (strength) {
+      case 0:
+      case 1:
+        strengthBar.classList.add("weak");
+        feedback = "Weak - Add more characters and variety";
+        break;
+      case 2:
+        strengthBar.classList.add("fair");
+        feedback = "Fair - Add uppercase, numbers, or symbols";
+        break;
+      case 3:
+      case 4:
+        strengthBar.classList.add("good");
+        feedback = "Good - Consider adding more complexity";
+        break;
+      case 5:
+        strengthBar.classList.add("strong");
+        feedback = "Strong password";
+        break;
+    }
+
+    strengthText.textContent = feedback;
+    strengthText.className = `strength-text ${
+      strength >= 3 ? "success" : "error"
+    }`;
+  }
+
+  validatePasswordMatch() {
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    const statusDiv = document.getElementById("confirmPasswordStatus");
+
+    if (confirmPassword && password !== confirmPassword) {
+      this.showStatus(statusDiv, "Passwords do not match", "error");
+      return false;
+    } else if (confirmPassword && password === confirmPassword) {
+      this.showStatus(statusDiv, "Passwords match", "success");
+      return true;
+    }
+    return true;
+  }
+
+  async handleSignup(e) {
+    e.preventDefault();
+
+    if (!this.checkDatabaseAvailability()) return;
+
+    if (!this.hospitalData) {
+      this.showNotification("Please verify hospital first", "error");
+      return;
+    }
+
+    const formData = new FormData(e.target);
+    const signupBtn = document.getElementById("signupBtn");
+
+    if (!this.validateSignupForm(formData)) {
+      return;
+    }
+
+    signupBtn.innerHTML =
+      '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+    signupBtn.disabled = true;
+
+    try {
+      // Update hospital record with password
+      const { error } = await supabase
+        .from("hospitals")
+        .update({
+          password_hash: formData.get("password"), // In production, hash this!
+          admin_email: formData.get("adminEmail"),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("hospital_id", this.hospitalData.hospital_id);
+
+      if (error) throw error;
+
+      this.showNotification(
+        "Hospital account created successfully!",
+        "success"
+      );
+      setTimeout(() => this.showLogin(), 1500);
+    } catch (error) {
+      console.error("Signup error:", error);
+      this.showNotification(
+        "Error creating account. Please try again.",
+        "error"
+      );
+    } finally {
+      signupBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+      signupBtn.disabled = false;
+    }
+  }
+
+  validateSignupForm(formData) {
+    const password = formData.get("password");
+    const confirmPassword = formData.get("confirmPassword");
+    const adminEmail = formData.get("adminEmail");
+    const termsAccepted = document.getElementById("termsAccepted").checked;
+
+    if (password !== confirmPassword) {
+      this.showNotification("Passwords do not match", "error");
+      return false;
+    }
+
+    if (password.length < 8) {
+      this.showNotification(
+        "Password must be at least 8 characters long",
+        "error"
+      );
+      return false;
+    }
+
+    if (!adminEmail) {
+      this.showNotification("Administrator email is required", "error");
+      return false;
+    }
+
+    if (!termsAccepted) {
+      this.showNotification("Please accept the terms of service", "error");
+      return false;
+    }
+
+    return true;
+  }
+
+  // Login Methods
+  async handleLogin(e) {
+    e.preventDefault();
+
+    if (!this.checkDatabaseAvailability()) return;
+
+    const formData = new FormData(e.target);
+    const hospitalId = formData.get("hospitalId").trim().toUpperCase();
+    const password = formData.get("password");
+    const rememberMe = document.getElementById("rememberMe").checked;
+    const loginBtn = document.getElementById("loginBtn");
+
+    if (!hospitalId || !password) {
+      this.showNotification("Please fill in all fields", "error");
+      return;
+    }
+
+    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+    loginBtn.disabled = true;
+
+    try {
+      const { data, error } = await supabase
+        .from("hospitals")
+        .select("*")
+        .eq("hospital_id", hospitalId)
+        .eq("password_hash", password) // In production, use proper password hashing
+        .single();
+
+      if (error || !data) {
+        throw new Error(
+          "Invalid credentials. Please check your Hospital ID and password."
+        );
+      }
+
+      if (!data.is_verified) {
+        throw new Error(
+          "Hospital account is not verified. Please contact administration."
+        );
+      }
+
+      const sessionData = {
+        hospitalId: hospitalId,
+        hospitalName: data.name,
+        hospitalType: data.hospital_type,
+        loginTime: new Date().toISOString(),
+        rememberMe: rememberMe,
+      };
+
+      if (rememberMe) {
+        localStorage.setItem("hospitalSession", JSON.stringify(sessionData));
+      } else {
+        sessionStorage.setItem("hospitalSession", JSON.stringify(sessionData));
+      }
+
+      this.currentSession = sessionData;
+      this.showNotification("Login successful!", "success");
+      setTimeout(() => this.showDashboard(), 1000);
+    } catch (error) {
+      console.error("Login error:", error);
+      this.showNotification(error.message, "error");
+    } finally {
+      loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+      loginBtn.disabled = false;
+    }
+  }
+
+  handleForgotPassword(e) {
+    e.preventDefault();
+    const hospitalId = prompt("Enter your Hospital ID:");
+    if (hospitalId) {
+      this.showNotification(
+        `Password reset instructions will be sent to the registered email for Hospital ID: ${hospitalId.toUpperCase()}`,
+        "info"
+      );
+    }
+  }
+
+  // Dashboard Methods
+  async loadDashboardStats() {
+    if (!this.checkDatabaseAvailability()) return;
+
+    try {
+      const today = new Date().toISOString().split("T")[0];
+
+      // Get today's records count
+      const { count: todayCount, error: todayError } = await supabase
+        .from("medical_records")
+        .select("*", { count: "exact", head: true })
+        .eq("hospital_id", this.currentSession.hospitalId)
+        .gte("created_at", today);
+
+      // Get total records count
+      const { count: totalCount, error: totalError } = await supabase
+        .from("medical_records")
+        .select("*", { count: "exact", head: true })
+        .eq("hospital_id", this.currentSession.hospitalId);
+
+      if (!todayError) {
+        document.getElementById("todaysRecords").textContent = todayCount || 0;
+      }
+      if (!totalError) {
+        document.getElementById("totalRecords").textContent = totalCount || 0;
+      }
+    } catch (error) {
+      console.error("Error loading dashboard stats:", error);
+    }
+  }
+
+  // Patient Verification Methods
+  async verifyPatient() {
+    if (!this.checkDatabaseAvailability()) return;
+
+    const patientId = document
+      .getElementById("patientId")
+      .value.trim()
+      .toUpperCase();
+    const patientPhone = document.getElementById("patientPhone").value.trim();
+    const patientName = document.getElementById("patientName").value.trim();
+    const patientIdStatus = document.getElementById("patientIdStatus");
+    const patientPhoneStatus = document.getElementById("patientPhoneStatus");
+    const patientNameStatus = document.getElementById("patientNameStatus");
+    const verifyBtn = document.getElementById("verifyPatientBtn");
+
+    // Clear previous status messages
+    this.showStatus(patientIdStatus, "", "");
+    this.showStatus(patientPhoneStatus, "", "");
+    this.showStatus(patientNameStatus, "", "");
+
+    if (!patientId || !patientPhone || !patientName) {
+      this.showNotification(
+        "Please fill in Patient ID, Phone, and Name",
+        "error"
+      );
+      return;
+    }
+
+    verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+    verifyBtn.disabled = true;
+
+    try {
+      // Verify patient exists with matching ID
+      const { data: patientData, error: patientError } = await supabase
+        .from("patients")
+        .select("*")
+        .eq("patient_id", patientId)
+        .eq("is_active", true)
+        .single();
+
+      if (patientError || !patientData) {
+        this.showStatus(
+          patientIdStatus,
+          "Patient ID not found in our records",
+          "error"
+        );
+        return;
+      }
+
+      // Verify phone number matches
+      if (patientData.phone !== patientPhone) {
+        this.showStatus(
+          patientPhoneStatus,
+          "Phone number does not match our records",
+          "error"
+        );
+        return;
+      }
+
+      // Verify name matches (case insensitive)
+      if (patientData.name.toLowerCase() !== patientName.toLowerCase()) {
+        this.showStatus(
+          patientNameStatus,
+          "Name does not match our records",
+          "error"
+        );
+        return;
+      }
+
+      // All verification passed
+      this.verifiedPatient = patientData;
+      this.showStatus(
+        patientIdStatus,
+        "Patient verified successfully!",
+        "success"
+      );
+      this.showStatus(patientPhoneStatus, "Phone verified!", "success");
+      this.showStatus(patientNameStatus, "Name verified!", "success");
+      this.displayVerifiedPatient(patientData);
+      this.showMedicalDetailsForm();
+
+      verifyBtn.innerHTML = '<i class="fas fa-check"></i> Verified';
+      verifyBtn.classList.add("success");
+    } catch (error) {
+      console.error("Patient verification error:", error);
+      this.showNotification(
+        "Error verifying patient. Please try again.",
+        "error"
+      );
+    } finally {
+      verifyBtn.disabled = false;
+    }
+  }
+
+  autoVerifyPatient() {
+    const patientId = document.getElementById("patientId").value.trim();
+    const patientPhone = document.getElementById("patientPhone").value.trim();
+    const patientName = document.getElementById("patientName").value.trim();
+
+    if (
+      patientId.length >= 6 &&
+      patientPhone.length >= 10 &&
+      patientName.length >= 3
+    ) {
+      clearTimeout(this.autoSearchTimeout);
+      this.autoSearchTimeout = setTimeout(() => {
+        this.verifyPatient();
+      }, 1500);
+    }
+  }
+
+  displayVerifiedPatient(patient) {
+    // Calculate age
+    const age = patient.date_of_birth
+      ? new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear()
+      : "N/A";
+
+    document.getElementById("verifiedPatientName").textContent = patient.name;
+    document.getElementById("verifiedPatientPhone").textContent = patient.phone;
+    document.getElementById("verifiedPatientEmail").textContent =
+      patient.email || "N/A";
+    document.getElementById("verifiedPatientAge").textContent =
+      age + (age !== "N/A" ? " years" : "");
+    document.getElementById("verifiedPatientGender").textContent =
+      patient.gender || "N/A";
+    document.getElementById("verifiedPatientBloodGroup").textContent =
+      patient.blood_group || "N/A";
+
+    document.getElementById("patientDetailsCard").classList.remove("hidden");
+  }
+
+  showMedicalDetailsForm() {
+    const medicalDetailsCard = document.getElementById("medicalDetailsCard");
+    if (medicalDetailsCard) {
+      medicalDetailsCard.style.display = "block";
+      medicalDetailsCard.scrollIntoView({ behavior: "smooth" });
+    }
+  }
+
+  async handleAddRecord(e) {
+    e.preventDefault();
+
+    if (!this.checkDatabaseAvailability()) return;
+
+    if (!this.verifiedPatient) {
+      this.showNotification("Please verify patient information first", "error");
+      return;
+    }
+
+    if (!this.currentSession) {
+      this.showNotification("Please log in first", "error");
+      return;
+    }
+
+    const formData = new FormData(e.target);
+    const submitBtn = document.getElementById("submitRecord");
+
+    if (!this.validateRecordForm(formData)) {
+      return;
+    }
+
+    submitBtn.innerHTML =
+      '<i class="fas fa-spinner fa-spin"></i> Adding Record...';
+    submitBtn.disabled = true;
+
+    try {
+      // Generate unique record number
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+      const recordNumber = `MED_${timestamp}_${random}`;
+
+      // Process attachments
+      const attachmentFiles = Array.from(
+        document.getElementById("attachments").files
+      );
+      const attachmentNames = attachmentFiles.map((file) => file.name);
+
+      // Calculate can_edit_until (1 hour from now)
+      const canEditUntil = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+      const recordData = {
+        record_number: recordNumber,
+        patient_id: this.verifiedPatient.patient_id,
+        hospital_id: this.currentSession.hospitalId,
+        record_type: formData.get("recordType"),
+        doctor_name: formData.get("doctorName"),
+        doctor_specialization: formData.get("doctorSpecialization") || null,
+        diagnosis: formData.get("diagnosis"),
+        treatment: formData.get("treatment") || null,
+        medications: formData.get("medications") || null,
+        follow_up_date: formData.get("followUpDate") || null,
+        severity: formData.get("severity"),
+        notes: formData.get("notes") || null,
+        attachments: attachmentNames.length > 0 ? attachmentNames : null,
+        can_edit_until: canEditUntil,
+        is_editable: true,
+      };
+
+      console.log("Attempting to insert record:", recordData);
+
+      const { data, error } = await supabase
+        .from("medical_records")
+        .insert([recordData])
+        .select();
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      console.log("Record inserted successfully:", data);
+      this.showNotification("Medical record added successfully!", "success");
+
+      // Reset form and clear verification
+      this.resetMedicalForm(e.target);
+      await this.loadDashboardStats();
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      console.error("Add record error details:", error);
+      this.handleDatabaseError(error);
+    } finally {
+      submitBtn.innerHTML = '<i class="fas fa-save"></i> Add Medical Record';
+      submitBtn.disabled = false;
+    }
+  }
+
+  handleDatabaseError(error) {
+    let errorMessage = "Error adding record. Please try again.";
+
+    if (error.message) {
+      if (error.message.includes("duplicate key")) {
+        errorMessage = "Record with this number already exists.";
+      } else if (
+        error.message.includes("foreign key") ||
+        error.message.includes("violates foreign key constraint")
+      ) {
+        errorMessage =
+          "Invalid patient or hospital reference. Please verify patient again.";
+      } else if (
+        error.message.includes("not null") ||
+        error.message.includes("null value")
+      ) {
+        errorMessage = "Please fill in all required fields.";
+      } else if (
+        error.message.includes("network") ||
+        error.message.includes("fetch")
+      ) {
+        errorMessage =
+          "Network error. Please check your connection and try again.";
+      } else if (error.message.includes("check constraint")) {
+        errorMessage = "Invalid data format. Please check your inputs.";
+      } else {
+        errorMessage = `Database error: ${error.message}`;
+      }
+    }
+
+    this.showNotification(errorMessage, "error");
+  }
+
+  validateRecordForm(formData) {
+    const requiredFields = {
+      recordType: "Record Type",
+      severity: "Severity Level",
+      doctorName: "Doctor Name",
+      diagnosis: "Diagnosis",
+    };
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+      const value = formData.get(field);
+      if (!value || !value.trim()) {
+        this.showNotification(`Please fill in the ${label} field`, "error");
+        console.error(`Missing required field: ${field}`);
+        return false;
+      }
+    }
+
+    // Check if patient is verified
+    if (!this.verifiedPatient) {
+      this.showNotification("Please verify patient information first", "error");
+      return false;
+    }
+
+    // Check if user is logged in
+    if (!this.currentSession) {
+      this.showNotification("Please log in first", "error");
+      return false;
+    }
+
+    return true;
+  }
+
+  resetMedicalForm(form) {
+    // Reset form
+    form.reset();
+    document.getElementById("filesList").innerHTML = "";
+    document.getElementById("patientDetailsCard").classList.add("hidden");
+    document.getElementById("medicalDetailsCard").style.display = "none";
+
+    // Reset patient verification fields
+    document.getElementById("patientId").value = "";
+    document.getElementById("patientPhone").value = "";
+    document.getElementById("patientName").value = "";
+
+    // Clear status messages
+    document.getElementById("patientIdStatus").textContent = "";
+    document.getElementById("patientPhoneStatus").textContent = "";
+    document.getElementById("patientNameStatus").textContent = "";
+
+    // Reset verify button
+    const verifyBtn = document.getElementById("verifyPatientBtn");
+    verifyBtn.innerHTML = '<i class="fas fa-search"></i> Verify Patient';
+    verifyBtn.classList.remove("success");
+    verifyBtn.disabled = false;
+
+    this.verifiedPatient = null;
+  }
+
+  handleFileSelection(e) {
+    const files = Array.from(e.target.files);
+    const filesList = document.getElementById("filesList");
+
+    filesList.innerHTML = "";
+
+    files.forEach((file, index) => {
+      const fileItem = document.createElement("div");
+      fileItem.className = "file-item";
+      fileItem.innerHTML = `
+                <div class="file-info">
+                    <i class="fas fa-file"></i>
+                    <span>${file.name}</span>
+                    <span class="file-size">(${(
+                      file.size /
+                      1024 /
+                      1024
+                    ).toFixed(2)} MB)</span>
+                </div>
+                <button type="button" class="remove-file" onclick="this.parentElement.remove(); app.updateFileInput();">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+      filesList.appendChild(fileItem);
+    });
+  }
+
+  updateFileInput() {
+    // Reset file input when files are removed
+    const fileInput = document.getElementById("attachments");
+    const filesList = document.getElementById("filesList");
+
+    if (filesList.children.length === 0) {
+      fileInput.value = "";
+    }
+  }
+
+  // Utility Methods
+  togglePasswordVisibility(inputId, toggleId) {
     const input = document.getElementById(inputId);
-    const button = document.getElementById(buttonId);
+    const toggle = document.getElementById(toggleId);
 
     if (input.type === "password") {
       input.type = "text";
-      button.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      toggle.innerHTML = '<i class="fas fa-eye-slash"></i>';
     } else {
       input.type = "password";
-      button.innerHTML = '<i class="fas fa-eye"></i>';
+      toggle.innerHTML = '<i class="fas fa-eye"></i>';
     }
   }
 
-  // Handle forgot password
-  handleForgotPassword(e) {
-    e.preventDefault();
-    this.showNotification(
-      "Please contact your system administrator to reset your password.",
-      "info"
-    );
+  showStatus(element, message, type) {
+    element.textContent = message;
+    element.className = `status-message ${type}`;
   }
 
-  // Show notification
-  showNotification(message, type = "info", duration = 5000) {
-    // Create notification container if it doesn't exist
-    let container = document.getElementById("notificationContainer");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "notificationContainer";
-      container.className = "notification-container";
-      document.body.appendChild(container);
+  showNotification(message, type) {
+    // Remove existing notification
+    const existingNotification = document.querySelector(".notification");
+    if (existingNotification) {
+      existingNotification.remove();
     }
 
-    // Create notification element
     const notification = document.createElement("div");
     notification.className = `notification notification-${type}`;
-
-    const icon =
-      type === "success"
-        ? "check-circle"
-        : type === "error"
-        ? "exclamation-circle"
-        : type === "warning"
-        ? "exclamation-triangle"
-        : "info-circle";
-
     notification.innerHTML = `
             <div class="notification-content">
-                <i class="fas fa-${icon}"></i>
+                <i class="fas fa-${
+                  type === "success"
+                    ? "check-circle"
+                    : type === "error"
+                    ? "exclamation-circle"
+                    : "info-circle"
+                }"></i>
                 <span>${message}</span>
             </div>
-            <button class="notification-close">
+            <button class="notification-close" onclick="this.parentElement.remove()">
                 <i class="fas fa-times"></i>
             </button>
         `;
 
-    // Add close functionality
-    notification
-      .querySelector(".notification-close")
-      .addEventListener("click", () => {
+    document.body.appendChild(notification);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentElement) {
         notification.remove();
-      });
+      }
+    }, 5000);
+  }
 
-    // Add to container
-    container.appendChild(notification);
-
-    // Auto remove after duration
-    if (duration > 0) {
-      setTimeout(() => {
-        if (notification.parentElement) {
-          notification.remove();
-        }
-      }, duration);
-    }
+  handleLogout() {
+    localStorage.removeItem("hospitalSession");
+    sessionStorage.removeItem("hospitalSession");
+    this.currentSession = null;
+    this.showNotification("Logged out successfully", "success");
+    setTimeout(() => this.showLogin(), 1000);
   }
 }
-
-// Initialize the application when DOM is loaded
-let app;
-document.addEventListener("DOMContentLoaded", () => {
-  app = new MediSecureApp();
-});
