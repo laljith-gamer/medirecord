@@ -3,7 +3,6 @@ const SUPABASE_URL = "https://vecyxrpwaaafvkbkqqpl.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlY3l4cnB3YWFhZnZrYmtxcXBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNjc4MDgsImV4cCI6MjA3Mzk0MzgwOH0._4uxQMsFvP4ypRzzwwraIxJTXyIjmuLZlmckcXp6orI";
 
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNlcG1hY25rbWR0ZGJxYWdkdnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5OTg1ODgsImV4cCI6MjA3MzU3NDU4OH0.VTjfkwAnk40zUcpu0qTojNOgFRY3W3XrvputrrTM4w0",
 // Initialize Supabase with comprehensive error handling
 let supabase;
 let isSupabaseInitialized = false;
