@@ -1,579 +1,541 @@
-<html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediVault - Hospital Management System</title>
+    <title>MediVault - Secure Medical Records System</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
-
 <body>
     <!-- Loading Screen -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-content">
-            <div class="logo-icon">
-                <i class="fas fa-hospital-symbol"></i>
-            </div>
-            <h2>MediVault</h2>
             <div class="loading-spinner"></div>
             <p>Initializing secure connection...</p>
         </div>
     </div>
 
     <!-- Connection Status -->
-    <div id="connectionStatus" class="connection-status hidden">
-        <i class="fas fa-wifi"></i>
-        <span>Checking connection...</span>
-    </div>
-
-    <!-- Animated Background -->
-    <div class="animated-bg">
-        <div class="floating-shapes">
-            <div class="shape shape-1"></div>
-            <div class="shape shape-2"></div>
-            <div class="shape shape-3"></div>
-            <div class="shape shape-4"></div>
-            <div class="shape shape-5"></div>
-        </div>
-    </div>
+    <div id="connectionStatus" class="connection-status hidden"></div>
 
     <!-- Signup Section -->
-    <section id="signupSection" class="page-section hidden">
-        <div class="auth-container">
-            <div class="auth-card">
-                <div class="auth-header">
-                    <div class="logo">
-                        <div class="logo-icon">
-                            <i class="fas fa-hospital-symbol"></i>
-                        </div>
-                        <h1>MediVault</h1>
-                    </div>
-                    <div class="auth-title">
-                        <h2>Create Hospital Account</h2>
-                        <p>Join our secure medical records network</p>
-                    </div>
+    <div id="signupSection" class="auth-section">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="logo-container">
+                    <div class="logo-icon">H</div>
+                    <h1 class="logo-text">MediVault</h1>
+                </div>
+                <h2>Create Hospital Account</h2>
+                <p>Join our secure medical records network</p>
+            </div>
+
+            <!-- Step 1: Hospital Verification -->
+            <div id="verificationStep">
+                <div class="form-group">
+                    <label for="hospitalId">Hospital ID</label>
+                    <input
+                        type="text"
+                        id="hospitalId"
+                        name="hospitalId"
+                        placeholder="Enter your Hospital ID"
+                        required
+                    />
+                    <small>e.g., APOLLO-CHE-001</small>
                 </div>
 
-                <form id="signupForm" class="auth-form">
+                <div class="form-group">
+                    <label for="licenseNumber">License Number</label>
+                    <input
+                        type="text"
+                        id="licenseNumber"
+                        name="licenseNumber"
+                        placeholder="Enter your license number"
+                        required
+                    />
+                    <small>e.g., TN/MED/2023/045</small>
+                </div>
+
+                <button type="button" id="verifyBtn" class="btn btn-primary">
+                    Verify Hospital
+                </button>
+            </div>
+
+            <!-- Step 2: Registration Form (Hidden initially) -->
+            <div id="registrationStep" class="hidden">
+                <form id="signupForm">
                     <div class="form-group">
-                        <label for="hospitalId">Hospital ID</label>
-                        <div class="input-container has-verify-btn">
-                            <input type="text" id="hospitalId" name="hospitalId" placeholder="Enter your Hospital ID" required="">
-                            <button type="button" id="verifyBtn" class="verify-btn">
-                                <i class="fas fa-search"></i>
-                                Verify
+                        <label for="hospitalName">Hospital Name</label>
+                        <input
+                            type="text"
+                            id="hospitalName"
+                            name="hospitalName"
+                            placeholder="Hospital name"
+                            readonly
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adminEmail">Admin Email</label>
+                        <input
+                            type="email"
+                            id="adminEmail"
+                            name="adminEmail"
+                            placeholder="admin@hospital.com"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contactPhone">Contact Phone</label>
+                        <input
+                            type="tel"
+                            id="contactPhone"
+                            name="contactPhone"
+                            placeholder="+91XXXXXXXXXX"
+                            pattern="^\+91[0-9]{10}$"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="password-input-group">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="Create password"
+                                required
+                            />
+                            <button type="button" id="togglePassword" class="toggle-password">
+                                👁️
                             </button>
                         </div>
-                        <div id="hospitalIdStatus" class="status-message"></div>
+                        <div id="passwordStrength" class="password-strength"></div>
+                        <small>Min 8 characters, uppercase, lowercase, number & special character</small>
                     </div>
 
-                    <div id="hospitalDetails" class="hospital-card hidden">
-                        <div class="hospital-info">
-                            <div class="hospital-icon">
-                                <i class="fas fa-hospital"></i>
-                            </div>
-                            <div class="hospital-details">
-                                <h3 id="hospitalName">Hospital Name</h3>
-                                <p id="hospitalLocation">Location</p>
-                                <div class="hospital-meta">
-                                    <span class="hospital-type" id="hospitalType">Type</span>
-                                    <span class="hospital-license" id="hospitalLicense">License</span>
-                                </div>
-                                <div class="verification-badge">
-                                    <i class="fas fa-check-circle"></i>
-                                    Verified Hospital
-                                </div>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            placeholder="Confirm password"
+                            required
+                        />
+                        <div id="passwordMatch" class="password-match"></div>
                     </div>
 
-                    <div id="passwordSection" class="password-section hidden">
-                        <div class="form-group">
-                            <label for="password">Create Password</label>
-                            <div class="input-container">
-                                <i class="fas fa-lock"></i>
-                                <input type="password" id="password" name="password" placeholder="Create a strong password" required="">
-                                <button type="button" id="togglePassword" class="toggle-btn">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                            <div class="password-strength">
-                                <div id="strengthBar" class="strength-bar"></div>
-                                <div id="strengthText" class="strength-text"></div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="confirmPassword">Confirm Password</label>
-                            <div class="input-container">
-                                <i class="fas fa-lock"></i>
-                                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required="">
-                            </div>
-                            <div id="confirmPasswordStatus" class="status-message"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="adminEmail">Administrator Email</label>
-                            <div class="input-container">
-                                <i class="fas fa-envelope"></i>
-                                <input type="email" id="adminEmail" name="adminEmail" placeholder="admin@hospital.com" required="">
-                            </div>
-                        </div>
-
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="termsAccepted" required="">
-                            <label for="termsAccepted">
-                                I agree to the <a href="#" onclick="event.preventDefault()">Terms of Service</a> and
-                                <a href="#" onclick="event.preventDefault()">Privacy Policy</a>
-                            </label>
-                        </div>
-
-                        <button type="submit" id="signupBtn" class="auth-btn primary">
-                            <i class="fas fa-user-plus"></i>
-                            Create Account
-                        </button>
-                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        Complete Registration
+                    </button>
                 </form>
+            </div>
 
-                <div class="auth-footer">
-                    <p>Already have an account? <a onclick="app.showLogin()">Sign in here</a></p>
-                </div>
+            <div class="auth-footer">
+                <p>
+                    Already have an account?
+                    <a href="#" onclick="window.showLogin(); return false;">Sign in here</a>
+                </p>
             </div>
         </div>
-    </section>
+    </div>
 
     <!-- Login Section -->
-    <section id="loginSection" class="page-section hidden">
-        <div class="auth-container">
-            <div class="auth-card">
-                <div class="auth-header">
-                    <div class="logo">
-                        <div class="logo-icon">
-                            <i class="fas fa-hospital-symbol"></i>
-                        </div>
-                        <h1>MediVault</h1>
-                    </div>
-                    <div class="auth-title">
-                        <h2>Welcome Back</h2>
-                        <p>Sign in to your hospital dashboard</p>
+    <div id="loginSection" class="auth-section hidden">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="logo-container">
+                    <div class="logo-icon">H</div>
+                    <h1 class="logo-text">MediVault</h1>
+                </div>
+                <h2>Hospital Login</h2>
+                <p>Sign in to your hospital dashboard</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginHospitalId">Hospital ID</label>
+                    <input
+                        type="text"
+                        id="loginHospitalId"
+                        name="loginHospitalId"
+                        placeholder="Enter your Hospital ID"
+                        required
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <div class="password-input-group">
+                        <input
+                            type="password"
+                            id="loginPassword"
+                            name="loginPassword"
+                            placeholder="Enter your password"
+                            required
+                        />
+                        <button type="button" id="toggleLoginPassword" class="toggle-password">
+                            👁️
+                        </button>
                     </div>
                 </div>
 
-                <form id="loginForm" class="auth-form">
-                    <div class="form-group">
-                        <label for="loginHospitalId">Hospital ID</label>
-                        <div class="input-container">
-                            <i class="fas fa-hospital"></i>
-                            <input type="text" id="loginHospitalId" name="hospitalId" placeholder="Enter your Hospital ID" required="">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="loginPassword">Password</label>
-                        <div class="input-container">
-                            <i class="fas fa-lock"></i>
-                            <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required="">
-                            <button type="button" id="toggleLoginPassword" class="toggle-btn">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="rememberMe">
-                        <label for="rememberMe">Remember me for 30 days</label>
-                    </div>
-
-                    <button type="submit" id="loginBtn" class="auth-btn primary">
-                        <i class="fas fa-sign-in-alt"></i>
-                        Sign In
-                    </button>
-
-                    <div class="forgot-password">
-                        <a href="#" id="forgotPassword">Forgot your password?</a>
-                    </div>
-                </form>
-
-                <div class="auth-footer">
-                    <p>New to MediVault? <a onclick="app.showSignup()">Create an account</a></p>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="rememberMe" name="rememberMe">
+                        <span>Remember me</span>
+                    </label>
                 </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Sign In
+                </button>
+
+                <div class="form-links">
+                    <a href="#" id="forgotPassword">Forgot password?</a>
+                </div>
+            </form>
+
+            <div class="auth-footer">
+                <p>
+                    New to MediVault?
+                    <a href="#" onclick="window.showSignup(); return false;">Create an account</a>
+                </p>
             </div>
         </div>
-    </section>
+    </div>
 
     <!-- Dashboard Section -->
-    <section id="dashboardSection" class="page-section hidden">
-        <div class="dashboard-layout">
-            <aside class="sidebar">
-                <div class="sidebar-header">
-                    <div class="logo">
-                        <div class="logo-icon">
-                            <i class="fas fa-hospital-symbol"></i>
-                        </div>
-                        <span>MediVault</span>
-                    </div>
-                    <div class="hospital-info">
-                        <h3 id="dashboardHospitalName">Hospital Name</h3>
-                        <p id="dashboardHospitalId">ID: LOADING...</p>
-                    </div>
+    <div id="dashboardSection" class="dashboard-section hidden">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="dashboard-header-left">
+                <div class="logo-container">
+                    <div class="logo-icon">H</div>
+                    <h1 class="logo-text">MediVault</h1>
                 </div>
+            </div>
+            <div class="dashboard-header-right">
+                <div class="hospital-info">
+                    <h3 id="dashboardHospitalName">Hospital Name</h3>
+                    <p id="dashboardHospitalId">ID: HOSP-001</p>
+                </div>
+                <button id="logoutBtn" class="btn btn-secondary">
+                    Logout
+                </button>
+            </div>
+        </div>
 
-                <nav class="sidebar-menu">
-                    <ul class="menu-list">
-                        <li class="menu-item active">
-                            <a href="#" onclick="app.switchDashboardView('dashboard')">
-                                <i class="fas fa-tachometer-alt"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="#" onclick="app.switchDashboardView('records')">
-                                <i class="fas fa-file-medical"></i> Medical Records
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="#" onclick="app.switchDashboardView('patients')">
-                                <i class="fas fa-users"></i> Patients
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="#" onclick="app.switchDashboardView('analytics')">
-                                <i class="fas fa-chart-bar"></i> Analytics
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="#" onclick="app.switchDashboardView('settings')">
-                                <i class="fas fa-cog"></i> Settings
-                            </a>
-                        </li>
-                    </ul>
+        <!-- Dashboard Content -->
+        <div class="dashboard-container">
+            <!-- Sidebar Menu -->
+            <aside class="dashboard-sidebar">
+                <nav class="dashboard-menu">
+                    <div class="menu-item active" onclick="window.switchDashboardView('dashboard')">
+                        <span class="menu-icon">📊</span>
+                        <span class="menu-text">Dashboard</span>
+                    </div>
+                    <div class="menu-item" onclick="window.switchDashboardView('records')">
+                        <span class="menu-icon">📋</span>
+                        <span class="menu-text">Medical Records</span>
+                    </div>
+                    <div class="menu-item" onclick="window.switchDashboardView('patients')">
+                        <span class="menu-icon">👥</span>
+                        <span class="menu-text">Patients</span>
+                    </div>
+                    <div class="menu-item" onclick="window.switchDashboardView('analytics')">
+                        <span class="menu-icon">📈</span>
+                        <span class="menu-text">Analytics</span>
+                    </div>
+                    <div class="menu-item" onclick="window.switchDashboardView('settings')">
+                        <span class="menu-icon">⚙️</span>
+                        <span class="menu-text">Settings</span>
+                    </div>
                 </nav>
-
-                <div class="sidebar-footer">
-                    <button id="logoutBtn" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Logout
-                    </button>
-                </div>
             </aside>
 
-            <main class="main-content">
+            <!-- Main Content Area -->
+            <main class="dashboard-main">
                 <!-- Dashboard View -->
                 <div id="dashboardView" class="dashboard-view">
-                    <header class="content-header">
-                        <div class="page-title">
-                            <h1><i class="fas fa-plus-circle"></i> Add Medical Record</h1>
-                            <p>Create a new medical record for a patient</p>
-                        </div>
-                        <div class="header-stats">
-                            <div class="stat-card">
-                                <div class="stat-number" id="todaysRecords">0</div>
-                                <div class="stat-label">Today's Records</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-number" id="totalRecords">0</div>
-                                <div class="stat-label">Total Records</div>
+                    <h2>Dashboard Overview</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📋</div>
+                            <div class="stat-content">
+                                <h3>Total Records</h3>
+                                <p class="stat-number" id="totalRecordsCount">0</p>
                             </div>
                         </div>
-                    </header>
+                        <div class="stat-card">
+                            <div class="stat-icon">📅</div>
+                            <div class="stat-content">
+                                <h3>Today's Records</h3>
+                                <p class="stat-number" id="todayRecordsCount">0</p>
+                            </div>
+                        </div>
+                    </div>
 
-                    <div class="content-body">
-                        <!-- Patient Verification Card -->
-                        <div class="form-card">
-                            <div class="card-header">
-                                <h3><i class="fas fa-user-check"></i> Patient Verification</h3>
+                    <!-- Add Medical Record Form -->
+                    <div class="add-record-section">
+                        <h3>Add New Medical Record</h3>
+
+                        <!-- Patient Verification -->
+                        <div class="patient-verification">
+                            <h4>Verify Patient</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="patientId">Patient ID</label>
+                                    <input
+                                        type="text"
+                                        id="patientId"
+                                        placeholder="Enter Patient ID"
+                                        required
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="patientPhone">Phone Number</label>
+                                    <input
+                                        type="tel"
+                                        id="patientPhone"
+                                        placeholder="+91XXXXXXXXXX"
+                                        required
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="patientName">Patient Name</label>
+                                    <input
+                                        type="text"
+                                        id="patientName"
+                                        placeholder="Enter patient name"
+                                        required
+                                    />
+                                </div>
                             </div>
-                            <div class="card-body">
+                            <button type="button" id="verifyPatientBtn" class="btn btn-primary">
+                                Verify Patient
+                            </button>
+                            <div id="verificationStatus" class="verification-status"></div>
+                            <div id="patientInfo" class="patient-info hidden"></div>
+                        </div>
+
+                        <!-- Medical Record Form (Hidden until patient verified) -->
+                        <div id="recordFormSection" class="hidden">
+                            <form id="addRecordForm">
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="patientId">Patient ID</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-id-card"></i>
-                                            <input type="text" id="patientId" placeholder="Enter Patient ID">
-                                        </div>
-                                        <div id="patientIdStatus" class="status-message"></div>
+                                        <label for="recordType">Record Type</label>
+                                        <select id="recordType" required>
+                                            <option value="OPD Consultation">OPD Consultation</option>
+                                            <option value="Prescription">Prescription</option>
+                                            <option value="Diagnostic Report - Pathology">Diagnostic Report - Pathology</option>
+                                            <option value="Diagnostic Report - Radiology">Diagnostic Report - Radiology</option>
+                                            <option value="Discharge Summary">Discharge Summary</option>
+                                            <option value="Surgery Record">Surgery Record</option>
+                                            <option value="Immunization Record">Immunization Record</option>
+                                            <option value="Emergency Record">Emergency Record</option>
+                                        </select>
                                     </div>
                                     <div class="form-group">
-                                        <label for="patientPhone">Phone Number</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-phone"></i>
-                                            <input type="tel" id="patientPhone" placeholder="Enter phone number">
-                                        </div>
-                                        <div id="patientPhoneStatus" class="status-message"></div>
+                                        <label for="visitType">Visit Type</label>
+                                        <select id="visitType" required>
+                                            <option value="OPD">OPD</option>
+                                            <option value="IPD">IPD</option>
+                                            <option value="Emergency">Emergency</option>
+                                            <option value="Follow-up">Follow-up</option>
+                                            <option value="Telemedicine">Telemedicine</option>
+                                        </select>
                                     </div>
                                 </div>
+
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="patientName">Patient Name</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-user"></i>
-                                            <input type="text" id="patientName" placeholder="Enter patient name">
-                                        </div>
-                                        <div id="patientNameStatus" class="status-message"></div>
+                                        <label for="doctorName">Doctor Name</label>
+                                        <input
+                                            type="text"
+                                            id="doctorName"
+                                            placeholder="Dr. Name"
+                                            required
+                                        />
                                     </div>
                                     <div class="form-group">
-                                        <button type="button" id="verifyPatientBtn" class="btn primary" style="margin-top: 1.5rem;">
-                                            <i class="fas fa-search"></i>
-                                            Verify Patient
-                                        </button>
+                                        <label for="doctorRegNumber">Registration Number</label>
+                                        <input
+                                            type="text"
+                                            id="doctorRegNumber"
+                                            placeholder="MCI Registration Number"
+                                        />
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- Patient Details Card -->
-                        <div id="patientDetailsCard" class="patient-verified-card hidden">
-                            <div class="verification-success">
-                                <i class="fas fa-check-circle"></i>
-                                <h4>Patient Verified Successfully</h4>
-                            </div>
-                            <div class="patient-info-grid">
-                                <div class="info-item">
-                                    <span class="label">Name:</span>
-                                    <span id="verifiedPatientName">John Doe</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="label">Phone:</span>
-                                    <span id="verifiedPatientPhone">+1234567890</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="label">Email:</span>
-                                    <span id="verifiedPatientEmail">john@example.com</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="label">Age:</span>
-                                    <span id="verifiedPatientAge">30 years</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="label">Gender:</span>
-                                    <span id="verifiedPatientGender">Male</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="label">Blood Group:</span>
-                                    <span id="verifiedPatientBloodGroup">A+</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Medical Record Form -->
-                        <div id="medicalDetailsCard" class="form-card" style="display: none;">
-                            <div class="card-header">
-                                <h3><i class="fas fa-file-medical-alt"></i> Medical Record Details</h3>
-                            </div>
-                            <div class="card-body">
-                                <form id="addRecordForm" class="record-form">
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="recordType">Record Type</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-list"></i>
-                                                <select id="recordType" name="recordType" required="">
-                                                    <option value="">Select record type</option>
-                                                    <option value="consultation">Consultation</option>
-                                                    <option value="prescription">Prescription</option>
-                                                    <option value="lab_report">Lab Report</option>
-                                                    <option value="imaging">Imaging</option>
-                                                    <option value="surgery">Surgery</option>
-                                                    <option value="vaccination">Vaccination</option>
-                                                    <option value="discharge">Discharge</option>
-                                                    <option value="emergency">Emergency</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="severity">Severity Level</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-exclamation-triangle"></i>
-                                                <select id="severity" name="severity" required="">
-                                                    <option value="">Select severity</option>
-                                                    <option value="Low">Low</option>
-                                                    <option value="Medium">Medium</option>
-                                                    <option value="High">High</option>
-                                                    <option value="Critical">Critical</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="doctorName">Doctor Name</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-user-md"></i>
-                                                <input type="text" id="doctorName" name="doctorName" placeholder="Enter doctor's name" required="">
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="doctorSpecialization">Specialization</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-stethoscope"></i>
-                                                <input type="text" id="doctorSpecialization" name="doctorSpecialization" placeholder="Doctor's specialization">
-                                            </div>
-                                        </div>
-                                    </div>
-
+                                <div class="form-row">
                                     <div class="form-group">
-                                        <label for="diagnosis">Diagnosis</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-clipboard-list"></i>
-                                            <textarea id="diagnosis" name="diagnosis" rows="3" placeholder="Enter diagnosis details" required=""></textarea>
-                                        </div>
+                                        <label for="doctorQualification">Qualification</label>
+                                        <input
+                                            type="text"
+                                            id="doctorQualification"
+                                            placeholder="e.g., MBBS, MD (General Medicine)"
+                                        />
                                     </div>
-
                                     <div class="form-group">
-                                        <label for="treatment">Treatment</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-heartbeat"></i>
-                                            <textarea id="treatment" name="treatment" rows="3" placeholder="Enter treatment details"></textarea>
-                                        </div>
+                                        <label for="doctorSpecialization">Specialization</label>
+                                        <select id="doctorSpecialization">
+                                            <option value="">Select Specialization</option>
+                                            <option value="General Medicine">General Medicine</option>
+                                            <option value="Paediatrics">Paediatrics</option>
+                                            <option value="Cardiology">Cardiology</option>
+                                            <option value="Neurology">Neurology</option>
+                                            <option value="Orthopaedics">Orthopaedics</option>
+                                            <option value="General Surgery">General Surgery</option>
+                                            <option value="Gynaecology">Gynaecology</option>
+                                            <option value="Dermatology">Dermatology</option>
+                                            <option value="ENT">ENT</option>
+                                            <option value="Ophthalmology">Ophthalmology</option>
+                                        </select>
                                     </div>
+                                </div>
 
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="medications">Medications</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-pills"></i>
-                                                <textarea id="medications" name="medications" rows="2" placeholder="List prescribed medications"></textarea>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="followUpDate">Follow-up Date</label>
-                                            <div class="input-container">
-                                                <i class="fas fa-calendar-alt"></i>
-                                                <input type="date" id="followUpDate" name="followUpDate">
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="form-group">
+                                    <label for="chiefComplaint">Chief Complaint</label>
+                                    <textarea
+                                        id="chiefComplaint"
+                                        rows="2"
+                                        placeholder="Patient's main complaint"
+                                    ></textarea>
+                                </div>
 
+                                <div class="form-group">
+                                    <label for="diagnosis">Diagnosis</label>
+                                    <textarea
+                                        id="diagnosis"
+                                        rows="3"
+                                        placeholder="Enter diagnosis"
+                                        required
+                                    ></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="treatment">Treatment Plan</label>
+                                    <textarea
+                                        id="treatment"
+                                        rows="3"
+                                        placeholder="Enter treatment details"
+                                    ></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="medications">Medications</label>
+                                    <textarea
+                                        id="medications"
+                                        rows="3"
+                                        placeholder="Enter prescribed medications"
+                                    ></textarea>
+                                </div>
+
+                                <div class="form-row">
                                     <div class="form-group">
-                                        <label for="notes">Additional Notes</label>
-                                        <div class="input-container">
-                                            <i class="fas fa-sticky-note"></i>
-                                            <textarea id="notes" name="notes" rows="3" placeholder="Any additional notes or observations"></textarea>
-                                        </div>
+                                        <label for="severity">Severity</label>
+                                        <select id="severity">
+                                            <option value="Low">Low</option>
+                                            <option value="Medium" selected>Medium</option>
+                                            <option value="High">High</option>
+                                            <option value="Critical">Critical</option>
+                                        </select>
                                     </div>
-
                                     <div class="form-group">
-                                        <label for="attachments">Attachments</label>
-                                        <div class="file-upload-area">
-                                            <input type="file" id="attachments" name="attachments" multiple="" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-                                            <div class="file-upload-content">
-                                                <i class="fas fa-cloud-upload-alt"></i>
-                                                <div class="upload-text">
-                                                    <p>Click to upload files or drag and drop</p>
-                                                    <span>PDF, DOC, Images up to 10MB each</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div id="filesList" class="files-list"></div>
+                                        <label for="followUpDate">Follow-up Date</label>
+                                        <input
+                                            type="date"
+                                            id="followUpDate"
+                                        />
                                     </div>
+                                </div>
 
-                                    <div class="form-actions">
-                                        <button type="button" class="btn secondary" onclick="this.form.reset()">
-                                            <i class="fas fa-times"></i>
-                                            Clear Form
-                                        </button>
-                                        <button type="submit" id="submitRecord" class="btn primary">
-                                            <i class="fas fa-save"></i>
-                                            Add Medical Record
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                                <div class="form-group">
+                                    <label for="followUpInstructions">Follow-up Instructions</label>
+                                    <textarea
+                                        id="followUpInstructions"
+                                        rows="2"
+                                        placeholder="Follow-up instructions for patient"
+                                    ></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="notes">Additional Notes</label>
+                                    <textarea
+                                        id="notes"
+                                        rows="2"
+                                        placeholder="Any additional notes"
+                                    ></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="attachments">Attachments</label>
+                                    <input
+                                        type="file"
+                                        id="attachments"
+                                        multiple
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                    />
+                                    <div id="fileList" class="file-list"></div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">
+                                    Add Medical Record
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
 
                 <!-- Records View -->
                 <div id="recordsView" class="dashboard-view hidden">
-                    <header class="content-header">
-                        <div class="page-title">
-                            <h1><i class="fas fa-file-medical"></i> Medical Records</h1>
-                            <p>View and manage medical records</p>
-                        </div>
-                    </header>
-                    <div class="content-body">
-                        <div class="records-container">
-                            <div class="records-header">
-                                <div class="search-bar">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" placeholder="Search records..." id="recordsSearch">
-                                </div>
-                                <div class="filter-buttons">
-                                    <button class="btn secondary">
-                                        <i class="fas fa-filter"></i> Filter
-                                    </button>
-                                    <button class="btn primary">
-                                        <i class="fas fa-download"></i> Export
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="recordsList" class="records-list">
-                                <div class="no-records">
-                                    <i class="fas fa-folder-open"></i>
-                                    <h3>No records found</h3>
-                                    <p>Medical records will appear here once created</p>
-                                </div>
-                            </div>
+                    <h2>Medical Records</h2>
+                    <div id="recordsList" class="records-list">
+                        <div class="empty-state">
+                            <p>Medical records will appear here once created</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Other views can be added similarly -->
+                <!-- Patients View -->
                 <div id="patientsView" class="dashboard-view hidden">
-                    <header class="content-header">
-                        <div class="page-title">
-                            <h1><i class="fas fa-users"></i> Patients</h1>
-                            <p>Manage patient information</p>
-                        </div>
-                    </header>
-                    <div class="content-body">
-                        <div class="coming-soon">
-                            <i class="fas fa-users"></i>
-                            <h2>Patients Management</h2>
+                    <h2>Patients</h2>
+                    <div id="patientsList" class="patients-list">
+                        <div class="empty-state">
                             <p>This feature is coming soon</p>
                         </div>
                     </div>
                 </div>
 
+                <!-- Analytics View -->
                 <div id="analyticsView" class="dashboard-view hidden">
-                    <header class="content-header">
-                        <div class="page-title">
-                            <h1><i class="fas fa-chart-bar"></i> Analytics</h1>
-                            <p>View hospital statistics and insights</p>
-                        </div>
-                    </header>
-                    <div class="content-body">
-                        <div class="coming-soon">
-                            <i class="fas fa-chart-bar"></i>
-                            <h2>Analytics Dashboard</h2>
-                            <p>This feature is coming soon</p>
-                        </div>
+                    <h2>Analytics</h2>
+                    <div class="empty-state">
+                        <p>This feature is coming soon</p>
                     </div>
                 </div>
 
+                <!-- Settings View -->
                 <div id="settingsView" class="dashboard-view hidden">
-                    <header class="content-header">
-                        <div class="page-title">
-                            <h1><i class="fas fa-cog"></i> Settings</h1>
-                            <p>Configure hospital settings</p>
-                        </div>
-                    </header>
-                    <div class="content-body">
-                        <div class="coming-soon">
-                            <i class="fas fa-cog"></i>
-                            <h2>Settings Panel</h2>
-                            <p>This feature is coming soon</p>
-                        </div>
+                    <h2>Settings</h2>
+                    <div class="empty-state">
+                        <p>This feature is coming soon</p>
                     </div>
                 </div>
             </main>
         </div>
-    </section>
+    </div>
 
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Your App JS -->
     <script src="app.js"></script>
-    <script>
-        const app = new MediSecureApp();
-    </script>
-
-
-</body></html>
+</body>
+</html>

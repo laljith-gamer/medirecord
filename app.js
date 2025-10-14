@@ -1,7 +1,7 @@
-// Supabase Configuration - Replace with your actual credentials
-const SUPABASE_URL = "https://vecyxrpwaaafvkbkqqpl.supabase.co";
+// Supabase Configuration - Update with your Supabase credentials
+const SUPABASE_URL = "https://qfkvfhuysebmnrctahzs.supabase.co";
 const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlY3l4cnB3YWFhZnZrYmtxcXBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNjc4MDgsImV4cCI6MjA3Mzk0MzgwOH0._4uxQMsFvP4ypRzzwwraIxJTXyIjmuLZlmckcXp6orI";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma3ZmaHV5c2VibW5yY3RhaHpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDA5MTcsImV4cCI6MjA3NTkxNjkxN30.3Z4a61aS8Pj3OPHY55U7PRyEUMH937j0VYxC_BRLjh0";
 
 // Initialize Supabase with comprehensive error handling
 let supabase;
@@ -12,13 +12,12 @@ function initializeSupabase() {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       throw new Error("Please update Supabase credentials in app.js");
     }
-
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     isSupabaseInitialized = true;
-    console.log("âœ… Supabase initialized successfully");
+    console.log("✅ Supabase initialized successfully");
     return true;
   } catch (error) {
-    console.error("âŒ Failed to initialize Supabase:", error);
+    console.error("❌ Failed to initialize Supabase:", error);
     showConnectionStatus("Failed to initialize database connection", "error");
     return false;
   }
@@ -30,16 +29,7 @@ function showConnectionStatus(message, type = "info", duration = 3000) {
   if (!statusDiv) return;
 
   statusDiv.className = `connection-status ${type}`;
-  statusDiv.innerHTML = `
-        <i class="fas fa-${
-          type === "success"
-            ? "check"
-            : type === "error"
-            ? "times"
-            : "info-circle"
-        }"></i>
-        <span>${message}</span>
-    `;
+  statusDiv.innerHTML = `${message}`;
   statusDiv.classList.remove("hidden");
 
   if (duration > 0) {
@@ -71,49 +61,37 @@ class MediSecureApp {
     this.autoSearchTimeout = null;
     this.connectionRetryCount = 0;
     this.maxRetries = 3;
-
     this.initializeApp();
   }
 
   async initializeApp() {
-    console.log("ðŸš€ Initializing MediSecure App...");
+    console.log("🚀 Initializing MediSecure App...");
 
-    // Show connection status
     showConnectionStatus("Initializing application...", "info", 0);
 
-    // Initialize Supabase
     if (!initializeSupabase()) {
       this.handleConnectionError();
       return;
     }
 
-    // Test database connection
     const connectionSuccess = await this.testDatabaseConnection();
     if (!connectionSuccess) {
       this.handleConnectionError();
       return;
     }
 
-    // Initialize event listeners
     this.initializeEventListeners();
-
-    // Check if user is already logged in
     await this.checkExistingSession();
 
     showConnectionStatus("Application ready!", "success");
     hideLoadingScreen();
-    console.log("âœ… MediSecure App initialized successfully");
+    console.log("✅ MediSecure App initialized successfully");
   }
 
   async testDatabaseConnection() {
     showConnectionStatus("Testing database connection...", "info", 0);
 
     try {
-      console.log("ðŸ”Œ Testing Supabase connection...");
-      console.log("ðŸ“ URL:", SUPABASE_URL);
-      console.log("ðŸ”‘ Key exists:", !!SUPABASE_ANON_KEY);
-
-      // Test basic connection with timeout
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error("Connection timeout")), 10000)
       );
@@ -129,16 +107,16 @@ class MediSecureApp {
       ]);
 
       if (error) {
-        console.error("âŒ Database connection failed:", error);
+        console.error("❌ Database connection failed:", error);
         this.handleSpecificError(error);
         return false;
       }
 
-      console.log("âœ… Database connection successful");
+      console.log("✅ Database connection successful");
       showConnectionStatus("Database connected successfully!", "success");
       return true;
     } catch (error) {
-      console.error("âŒ Connection test error:", error);
+      console.error("❌ Connection test error:", error);
       this.handleConnectionError(error);
       return false;
     }
@@ -185,13 +163,10 @@ class MediSecureApp {
   }
 
   showOfflineMode() {
-    // Show offline mode notification
     this.showNotification(
       "Application is running in offline mode. Some features may not work.",
       "error"
     );
-
-    // Still initialize the UI
     this.initializeEventListeners();
     hideLoadingScreen();
     this.showSignup();
@@ -201,6 +176,7 @@ class MediSecureApp {
     const sessionData =
       localStorage.getItem("hospitalSession") ||
       sessionStorage.getItem("hospitalSession");
+
     if (sessionData) {
       try {
         this.currentSession = JSON.parse(sessionData);
@@ -274,7 +250,7 @@ class MediSecureApp {
         this.handleFileSelection(e)
       );
 
-    // Auto-verify when all fields are filled
+    // Auto-verify patient
     const patientIdInput = document.getElementById("patientId");
     const patientPhoneInput = document.getElementById("patientPhone");
     const patientNameInput = document.getElementById("patientName");
@@ -300,46 +276,507 @@ class MediSecureApp {
   // Navigation Methods
   showSignup() {
     this.hideAllSections();
-    document.getElementById("signupSection").classList.remove("hidden");
+    const signupSection = document.getElementById("signupSection");
+    if (signupSection) signupSection.classList.remove("hidden");
     this.currentSection = "signup";
     this.resetForms();
   }
 
   showLogin() {
     this.hideAllSections();
-    document.getElementById("loginSection").classList.remove("hidden");
+    const loginSection = document.getElementById("loginSection");
+    if (loginSection) loginSection.classList.remove("hidden");
     this.currentSection = "login";
     this.resetForms();
   }
 
   async showDashboard() {
     this.hideAllSections();
-    document.getElementById("dashboardSection").classList.remove("hidden");
+    const dashboardSection = document.getElementById("dashboardSection");
+    if (dashboardSection) dashboardSection.classList.remove("hidden");
     this.currentSection = "dashboard";
+
     if (this.currentSession) {
-      document.getElementById("dashboardHospitalName").textContent =
-        this.currentSession.hospitalName;
-      document.getElementById(
-        "dashboardHospitalId"
-      ).textContent = `ID: ${this.currentSession.hospitalId}`;
+      const hospitalName = document.getElementById("dashboardHospitalName");
+      const hospitalId = document.getElementById("dashboardHospitalId");
+
+      if (hospitalName)
+        hospitalName.textContent = this.currentSession.hospitalName;
+      if (hospitalId)
+        hospitalId.textContent = `ID: ${this.currentSession.hospitalId}`;
+
       await this.loadDashboardStats();
     }
+
     this.resetForms();
     this.switchDashboardView("dashboard");
   }
 
   hideAllSections() {
-    document.getElementById("signupSection").classList.add("hidden");
-    document.getElementById("loginSection").classList.add("hidden");
-    document.getElementById("dashboardSection").classList.add("hidden");
+    const sections = ["signupSection", "loginSection", "dashboardSection"];
+    sections.forEach((sectionId) => {
+      const section = document.getElementById(sectionId);
+      if (section) section.classList.add("hidden");
+    });
   }
 
-  // Dashboard view switching
+  // Hospital Verification and Signup
+  async verifyHospital() {
+    if (!this.checkDatabaseAvailability()) return;
+
+    // Add null checks for input elements
+    const hospitalIdInput = document.getElementById("hospitalId");
+    const licenseNumberInput = document.getElementById("licenseNumber");
+
+    if (!hospitalIdInput || !licenseNumberInput) {
+      console.error("❌ Form elements not found!");
+      console.log("hospitalIdInput:", hospitalIdInput);
+      console.log("licenseNumberInput:", licenseNumberInput);
+      this.showNotification(
+        "Form elements not loaded. Please refresh the page.",
+        "error"
+      );
+      return;
+    }
+
+    const hospitalId = hospitalIdInput.value.trim();
+    const licenseNumber = licenseNumberInput.value.trim();
+
+    if (!hospitalId || !licenseNumber) {
+      this.showNotification(
+        "Please enter both Hospital ID and License Number",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      showConnectionStatus("Verifying hospital credentials...", "info", 0);
+
+      const { data, error } = await supabase
+        .from("hospitals")
+        .select("*")
+        .eq("hospital_id", hospitalId)
+        .eq("license_number", licenseNumber)
+        .single();
+
+      if (error || !data) {
+        console.error("❌ Verification failed:", error);
+        this.showNotification("Invalid Hospital ID or License Number", "error");
+        showConnectionStatus("Verification failed", "error");
+        return;
+      }
+
+      this.hospitalData = data;
+      this.showNotification("Hospital verified successfully!", "success");
+      showConnectionStatus("Hospital verified!", "success");
+
+      // Hide verification step and show registration form
+      const verificationStep = document.getElementById("verificationStep");
+      const registrationStep = document.getElementById("registrationStep");
+
+      if (verificationStep) verificationStep.classList.add("hidden");
+      if (registrationStep) registrationStep.classList.remove("hidden");
+
+      // Pre-fill hospital name
+      const hospitalNameInput = document.getElementById("hospitalName");
+      if (hospitalNameInput && data.name) {
+        hospitalNameInput.value = data.name;
+      }
+    } catch (error) {
+      console.error("❌ Verification error:", error);
+      this.showNotification("Verification failed. Please try again.", "error");
+      showConnectionStatus("Verification error", "error");
+    }
+  }
+
+  async handleSignup(e) {
+    e.preventDefault();
+
+    if (!this.checkDatabaseAvailability()) return;
+
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    const adminEmail = document.getElementById("adminEmail").value;
+    const contactPhone = document.getElementById("contactPhone").value;
+
+    if (password !== confirmPassword) {
+      this.showNotification("Passwords do not match!", "error");
+      return;
+    }
+
+    if (!this.validatePasswordStrength(password)) {
+      this.showNotification("Password does not meet requirements", "error");
+      return;
+    }
+
+    try {
+      // Hash password
+      const passwordHash = await this.hashPassword(password);
+
+      const { data, error } = await supabase
+        .from("hospitals")
+        .update({
+          password_hash: passwordHash,
+          admin_email: adminEmail,
+          contact_phone: contactPhone,
+          is_verified: true,
+        })
+        .eq("hospital_id", this.hospitalData.hospital_id);
+
+      if (error) throw error;
+
+      this.showNotification(
+        "Registration successful! Please login.",
+        "success"
+      );
+      setTimeout(() => this.showLogin(), 2000);
+    } catch (error) {
+      console.error("Signup error:", error);
+      this.showNotification("Registration failed. Please try again.", "error");
+    }
+  }
+
+  async handleLogin(e) {
+    e.preventDefault();
+
+    if (!this.checkDatabaseAvailability()) return;
+
+    const hospitalId = document.getElementById("loginHospitalId").value;
+    const password = document.getElementById("loginPassword").value;
+    const rememberMe = document.getElementById("rememberMe").checked;
+
+    try {
+      const { data, error } = await supabase
+        .from("hospitals")
+        .select("*")
+        .eq("hospital_id", hospitalId)
+        .single();
+
+      if (error || !data) {
+        this.showNotification("Invalid Hospital ID or Password", "error");
+        return;
+      }
+
+      // Verify password
+      const passwordMatch = await this.verifyPassword(
+        password,
+        data.password_hash
+      );
+
+      if (!passwordMatch) {
+        this.showNotification("Invalid Hospital ID or Password", "error");
+        return;
+      }
+
+      this.currentSession = {
+        hospitalId: data.hospital_id,
+        hospitalName: data.name,
+        hospitalType: data.hospital_type,
+        facilityCategory: data.facility_category || "",
+        city: data.city,
+        state: data.state,
+      };
+
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem("hospitalSession", JSON.stringify(this.currentSession));
+
+      this.showNotification("Login successful!", "success");
+      await this.showDashboard();
+    } catch (error) {
+      console.error("Login error:", error);
+      this.showNotification("Login failed. Please try again.", "error");
+    }
+  }
+
+  // Patient Verification
+  async verifyPatient() {
+    if (!this.checkDatabaseAvailability()) return;
+
+    const patientId = document.getElementById("patientId").value;
+    const patientPhone = document.getElementById("patientPhone").value;
+    const patientName = document.getElementById("patientName").value;
+
+    if (!patientId || !patientPhone || !patientName) {
+      this.showNotification(
+        "Please fill all patient verification fields",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("patients")
+        .select("*")
+        .eq("patient_id", patientId)
+        .eq("phone", patientPhone)
+        .ilike("name", `%${patientName}%`)
+        .single();
+
+      if (error || !data) {
+        this.showNotification(
+          "Patient not found. Please check the details.",
+          "error"
+        );
+        this.verifiedPatient = null;
+        this.updatePatientVerificationUI(false);
+        return;
+      }
+
+      this.verifiedPatient = data;
+      this.showNotification("Patient verified successfully!", "success");
+      this.updatePatientVerificationUI(true, data);
+
+      const recordFormSection = document.getElementById("recordFormSection");
+      if (recordFormSection) recordFormSection.classList.remove("hidden");
+    } catch (error) {
+      console.error("Patient verification error:", error);
+      this.showNotification("Verification failed. Please try again.", "error");
+    }
+  }
+
+  autoVerifyPatient() {
+    clearTimeout(this.autoSearchTimeout);
+
+    const patientId = document.getElementById("patientId")?.value;
+    const patientPhone = document.getElementById("patientPhone")?.value;
+    const patientName = document.getElementById("patientName")?.value;
+
+    if (patientId && patientPhone && patientName) {
+      this.autoSearchTimeout = setTimeout(() => {
+        this.verifyPatient();
+      }, 1000);
+    }
+  }
+
+  updatePatientVerificationUI(isVerified, patientData = null) {
+    const verificationStatus = document.getElementById("verificationStatus");
+    const patientInfo = document.getElementById("patientInfo");
+
+    if (!verificationStatus || !patientInfo) return;
+
+    if (isVerified && patientData) {
+      verificationStatus.className = "verification-status success";
+      verificationStatus.innerHTML = `✓ Patient Verified`;
+
+      // Calculate age
+      const age = this.calculateAge(patientData.date_of_birth);
+
+      patientInfo.innerHTML = `
+                <div class="patient-details">
+                    <div class="detail-row">
+                        <strong>Name:</strong> ${patientData.name}
+                    </div>
+                    <div class="detail-row">
+                        <strong>ABHA Number:</strong> ${
+                          patientData.abha_number || "Not provided"
+                        }
+                    </div>
+                    <div class="detail-row">
+                        <strong>Phone:</strong> ${patientData.phone}
+                    </div>
+                    <div class="detail-row">
+                        <strong>Age:</strong> ${age} years
+                    </div>
+                    <div class="detail-row">
+                        <strong>Gender:</strong> ${patientData.gender}
+                    </div>
+                    <div class="detail-row">
+                        <strong>Blood Group:</strong> ${
+                          patientData.blood_group || "Unknown"
+                        }
+                    </div>
+                    ${this.renderAllergies(patientData.allergies)}
+                    ${this.renderChronicConditions(
+                      patientData.chronic_conditions
+                    )}
+                </div>
+            `;
+      patientInfo.classList.remove("hidden");
+    } else {
+      verificationStatus.className = "verification-status error";
+      verificationStatus.innerHTML = `✗ Patient Not Verified`;
+      patientInfo.classList.add("hidden");
+    }
+  }
+
+  renderAllergies(allergies) {
+    if (!allergies || allergies.length === 0) return "";
+
+    try {
+      const allergyArray =
+        typeof allergies === "string" ? JSON.parse(allergies) : allergies;
+      if (allergyArray.length > 0) {
+        return `
+                    <div class="detail-row alert">
+                        <strong>⚠️ Allergies:</strong> ${allergyArray.join(
+                          ", "
+                        )}
+                    </div>
+                `;
+      }
+    } catch (e) {
+      console.error("Error parsing allergies:", e);
+    }
+    return "";
+  }
+
+  renderChronicConditions(conditions) {
+    if (!conditions || conditions.length === 0) return "";
+
+    try {
+      const conditionsArray =
+        typeof conditions === "string" ? JSON.parse(conditions) : conditions;
+      if (conditionsArray.length > 0) {
+        return `
+                    <div class="detail-row alert">
+                        <strong>Chronic Conditions:</strong> ${conditionsArray.join(
+                          ", "
+                        )}
+                    </div>
+                `;
+      }
+    } catch (e) {
+      console.error("Error parsing chronic conditions:", e);
+    }
+    return "";
+  }
+
+  calculateAge(dateOfBirth) {
+    if (!dateOfBirth) return 0;
+
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+
+    return age;
+  }
+
+  // Add Medical Record
+  async handleAddRecord(e) {
+    e.preventDefault();
+
+    if (!this.checkDatabaseAvailability()) return;
+
+    if (!this.verifiedPatient) {
+      this.showNotification("Please verify patient first", "error");
+      return;
+    }
+
+    const recordData = {
+      record_number: this.generateRecordNumber(),
+      patient_id: this.verifiedPatient.patient_id,
+      hospital_id: this.currentSession.hospitalId,
+      visit_date: new Date().toISOString().split("T")[0],
+      visit_time: new Date().toTimeString().split(" ")[0],
+      visit_type: document.getElementById("visitType")?.value || "OPD",
+      record_type:
+        document.getElementById("recordType")?.value || "OPD Consultation",
+      doctor_name: document.getElementById("doctorName")?.value || "",
+      doctor_registration_number:
+        document.getElementById("doctorRegNumber")?.value || "",
+      doctor_qualification:
+        document.getElementById("doctorQualification")?.value || "",
+      doctor_specialization:
+        document.getElementById("doctorSpecialization")?.value || "",
+      chief_complaint: document.getElementById("chiefComplaint")?.value || "",
+      diagnosis: document.getElementById("diagnosis")?.value || "",
+      provisional_diagnosis: document.getElementById("diagnosis")?.value || "",
+      treatment: document.getElementById("treatment")?.value || "",
+      treatment_plan: document.getElementById("treatment")?.value || "",
+      medications: document.getElementById("medications")?.value || "",
+      follow_up_date: document.getElementById("followUpDate")?.value || null,
+      follow_up_instructions:
+        document.getElementById("followUpInstructions")?.value || "",
+      severity: document.getElementById("severity")?.value || "Medium",
+      notes: document.getElementById("notes")?.value || "",
+      attachments: [],
+      created_at: new Date().toISOString(),
+      can_edit_until: this.calculateEditDeadline(),
+      is_editable: true,
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from("medical_records")
+        .insert([recordData]);
+
+      if (error) throw error;
+
+      this.showNotification("Medical record added successfully!", "success");
+
+      const addRecordForm = document.getElementById("addRecordForm");
+      if (addRecordForm) addRecordForm.reset();
+
+      this.verifiedPatient = null;
+      this.updatePatientVerificationUI(false);
+
+      const recordFormSection = document.getElementById("recordFormSection");
+      if (recordFormSection) recordFormSection.classList.add("hidden");
+
+      await this.loadDashboardStats();
+    } catch (error) {
+      console.error("Error adding record:", error);
+      this.showNotification(
+        "Failed to add medical record. Please try again.",
+        "error"
+      );
+    }
+  }
+
+  generateRecordNumber() {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `REC-${this.currentSession.hospitalId}-${timestamp}-${random}`;
+  }
+
+  calculateEditDeadline() {
+    const deadline = new Date();
+    deadline.setHours(deadline.getHours() + 24);
+    return deadline.toISOString();
+  }
+
+  // Dashboard Statistics
+  async loadDashboardStats() {
+    if (!this.checkDatabaseAvailability()) return;
+
+    try {
+      const { data: records, error: recordsError } = await supabase
+        .from("medical_records")
+        .select("*")
+        .eq("hospital_id", this.currentSession.hospitalId);
+
+      if (recordsError) throw recordsError;
+
+      const totalRecords = records.length;
+      const todayRecords = records.filter(
+        (r) =>
+          new Date(r.created_at).toDateString() === new Date().toDateString()
+      ).length;
+
+      const totalRecordsCount = document.getElementById("totalRecordsCount");
+      const todayRecordsCount = document.getElementById("todayRecordsCount");
+
+      if (totalRecordsCount) totalRecordsCount.textContent = totalRecords;
+      if (todayRecordsCount) todayRecordsCount.textContent = todayRecords;
+    } catch (error) {
+      console.error("Error loading dashboard stats:", error);
+    }
+  }
+
+  // Dashboard View Switching
   switchDashboardView(view) {
-    // Update current view
     this.currentDashboardView = view;
 
-    // Hide all dashboard views
     const views = [
       "dashboardView",
       "recordsView",
@@ -352,20 +789,17 @@ class MediSecureApp {
       if (element) element.classList.add("hidden");
     });
 
-    // Show selected view
     const selectedView = document.getElementById(view + "View");
     if (selectedView) selectedView.classList.remove("hidden");
 
-    // Update menu active state
     document
       .querySelectorAll(".menu-item")
       .forEach((item) => item.classList.remove("active"));
     const activeMenuItem = document
-      .querySelector(`[onclick="app.switchDashboardView('${view}')"]`)
+      .querySelector(`[onclick*="${view}"]`)
       ?.closest(".menu-item");
     if (activeMenuItem) activeMenuItem.classList.add("active");
 
-    // Load view-specific data
     this.loadViewData(view);
   }
 
@@ -375,13 +809,11 @@ class MediSecureApp {
         await this.loadMedicalRecords();
         break;
       case "patients":
-        // Load patients data
+        await this.loadPatients();
         break;
       case "analytics":
-        // Load analytics data
         break;
       case "settings":
-        // Load settings
         break;
     }
   }
@@ -395,7 +827,7 @@ class MediSecureApp {
         .select(
           `
                     *,
-                    patients!inner(name, phone)
+                    patients!inner(name, phone, abha_number)
                 `
         )
         .eq("hospital_id", this.currentSession.hospitalId)
@@ -416,9 +848,7 @@ class MediSecureApp {
 
     if (!records || records.length === 0) {
       recordsList.innerHTML = `
-                <div class="no-records">
-                    <i class="fas fa-folder-open"></i>
-                    <h3>No records found</h3>
+                <div class="empty-state">
                     <p>Medical records will appear here once created</p>
                 </div>
             `;
@@ -428,36 +858,36 @@ class MediSecureApp {
     recordsList.innerHTML = records
       .map(
         (record) => `
-            <div class="record-item" style="background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 3px 6px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
-                <div class="record-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h4 style="margin: 0; color: #2d3748; font-size: 1.2rem;">${
-                      record.patients.name
-                    }</h4>
-                    <span class="record-type" style="background: #667eea; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; text-transform: capitalize;">${record.record_type.replace(
-                      "_",
-                      " "
-                    )}</span>
+            <div class="record-card">
+                <div class="record-header">
+                    <h3>${record.patients.name}</h3>
+                    <span class="severity-badge ${record.severity.toLowerCase()}">${
+          record.severity
+        }</span>
                 </div>
-                <div class="record-details" style="margin-bottom: 1rem;">
-                    <p style="margin: 0.25rem 0;"><strong>Diagnosis:</strong> ${
-                      record.diagnosis
+                <div class="record-body">
+                    <p><strong>Record #:</strong> ${record.record_number}</p>
+                    <p><strong>ABHA:</strong> ${
+                      record.patients.abha_number || "Not provided"
                     }</p>
-                    <p style="margin: 0.25rem 0;"><strong>Doctor:</strong> ${
-                      record.doctor_name
+                    <p><strong>Diagnosis:</strong> ${
+                      record.diagnosis || "N/A"
                     }</p>
-                    <p style="margin: 0.25rem 0;"><strong>Date:</strong> ${new Date(
+                    <p><strong>Doctor:</strong> ${record.doctor_name} ${
+          record.doctor_specialization
+            ? "(" + record.doctor_specialization + ")"
+            : ""
+        }</p>
+                    <p><strong>Date:</strong> ${new Date(
                       record.created_at
                     ).toLocaleDateString()}</p>
-                    <p style="margin: 0.25rem 0;"><strong>Severity:</strong> <span style="color: ${this.getSeverityColor(
-                      record.severity
-                    )}">${record.severity}</span></p>
-                </div>
-                <div class="record-actions">
-                    <button class="btn secondary" onclick="app.viewRecord('${
-                      record.id
-                    }')" style="padding: 0.5rem 1rem; border: 1px solid #e2e8f0; background: #f7fafc; border-radius: 8px; cursor: pointer;">
-                        <i class="fas fa-eye"></i> View Details
-                    </button>
+                    ${
+                      record.follow_up_date
+                        ? `<p><strong>Follow-up:</strong> ${new Date(
+                            record.follow_up_date
+                          ).toLocaleDateString()}</p>`
+                        : ""
+                    }
                 </div>
             </div>
         `
@@ -465,808 +895,213 @@ class MediSecureApp {
       .join("");
   }
 
-  getSeverityColor(severity) {
-    switch (severity) {
-      case "Low":
-        return "#48bb78";
-      case "Medium":
-        return "#ed8936";
-      case "High":
-        return "#f56565";
-      case "Critical":
-        return "#e53e3e";
-      default:
-        return "#718096";
-    }
-  }
-
-  viewRecord(recordId) {
-    this.showNotification("Record details view coming soon!", "info");
-  }
-
-  resetForms() {
-    const forms = document.querySelectorAll("form");
-    forms.forEach((form) => form.reset());
-
-    const statusMessages = document.querySelectorAll(".status-message");
-    statusMessages.forEach((msg) => (msg.textContent = ""));
-
-    const detailSections = document.querySelectorAll(
-      ".hospital-card, .patient-verified-card"
-    );
-    detailSections.forEach((section) => section.classList.add("hidden"));
-
-    const passwordSection = document.getElementById("passwordSection");
-    if (passwordSection) passwordSection.classList.add("hidden");
-
-    const medicalDetailsCard = document.getElementById("medicalDetailsCard");
-    if (medicalDetailsCard) medicalDetailsCard.style.display = "none";
-
-    const filesList = document.getElementById("filesList");
-    if (filesList) filesList.innerHTML = "";
-
-    // Reset verify button
-    const verifyBtn = document.getElementById("verifyPatientBtn");
-    if (verifyBtn) {
-      verifyBtn.innerHTML = '<i class="fas fa-search"></i> Verify Patient';
-      verifyBtn.classList.remove("success");
-      verifyBtn.disabled = false;
-    }
-
-    this.hospitalData = null;
-    this.verifiedPatient = null;
-  }
-
-  // Check database availability before operations
-  checkDatabaseAvailability() {
-    if (!isSupabaseInitialized) {
-      this.showNotification(
-        "Database connection not available. Please refresh the page.",
-        "error"
-      );
-      return false;
-    }
-    return true;
-  }
-
-  // Signup Methods
-  async verifyHospital() {
+  async loadPatients() {
     if (!this.checkDatabaseAvailability()) return;
-
-    const hospitalId = document
-      .getElementById("hospitalId")
-      .value.trim()
-      .toUpperCase();
-    const statusDiv = document.getElementById("hospitalIdStatus");
-    const verifyBtn = document.getElementById("verifyBtn");
-    const hospitalDetailsDiv = document.getElementById("hospitalDetails");
-    const passwordSection = document.getElementById("passwordSection");
-
-    if (!hospitalId) {
-      this.showStatus(statusDiv, "Please enter Hospital ID", "error");
-      return;
-    }
-
-    verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
-    verifyBtn.disabled = true;
 
     try {
       const { data, error } = await supabase
-        .from("hospitals")
+        .from("patients")
         .select("*")
-        .eq("hospital_id", hospitalId)
-        .single();
-
-      if (error || !data) {
-        this.showStatus(
-          statusDiv,
-          "Hospital ID not found. Please check and try again.",
-          "error"
-        );
-        return;
-      }
-
-      if (!data.is_verified) {
-        this.showStatus(
-          statusDiv,
-          "Hospital is not verified. Please contact administration.",
-          "error"
-        );
-        return;
-      }
-
-      this.hospitalData = data;
-      this.showStatus(statusDiv, "Hospital verified successfully!", "success");
-      this.displayHospitalDetails(data);
-      hospitalDetailsDiv.classList.remove("hidden");
-      passwordSection.classList.remove("hidden");
-      passwordSection.scrollIntoView({ behavior: "smooth" });
-    } catch (error) {
-      console.error("Verification error:", error);
-      this.showStatus(
-        statusDiv,
-        "Error verifying hospital. Please try again.",
-        "error"
-      );
-    } finally {
-      verifyBtn.innerHTML = '<i class="fas fa-search"></i> Verify';
-      verifyBtn.disabled = false;
-    }
-  }
-
-  displayHospitalDetails(hospital) {
-    document.getElementById("hospitalName").textContent = hospital.name;
-    document.getElementById(
-      "hospitalLocation"
-    ).textContent = `${hospital.city}, ${hospital.state}`;
-    document.getElementById("hospitalType").textContent =
-      hospital.hospital_type;
-    document.getElementById("hospitalLicense").textContent =
-      hospital.license_number;
-  }
-
-  checkPasswordStrength() {
-    const password = document.getElementById("password").value;
-    const strengthBar = document.getElementById("strengthBar");
-    const strengthText = document.getElementById("strengthText");
-
-    let strength = 0;
-    let feedback = "";
-
-    if (password.length >= 8) strength += 1;
-    if (/[a-z]/.test(password)) strength += 1;
-    if (/[A-Z]/.test(password)) strength += 1;
-    if (/[0-9]/.test(password)) strength += 1;
-    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-
-    strengthBar.className = "strength-bar";
-    switch (strength) {
-      case 0:
-      case 1:
-        strengthBar.classList.add("weak");
-        feedback = "Weak - Add more characters and variety";
-        break;
-      case 2:
-        strengthBar.classList.add("fair");
-        feedback = "Fair - Add uppercase, numbers, or symbols";
-        break;
-      case 3:
-      case 4:
-        strengthBar.classList.add("good");
-        feedback = "Good - Consider adding more complexity";
-        break;
-      case 5:
-        strengthBar.classList.add("strong");
-        feedback = "Strong password";
-        break;
-    }
-
-    strengthText.textContent = feedback;
-    strengthText.className = `strength-text ${
-      strength >= 3 ? "success" : "error"
-    }`;
-  }
-
-  validatePasswordMatch() {
-    const password = document.getElementById("password").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
-    const statusDiv = document.getElementById("confirmPasswordStatus");
-
-    if (confirmPassword && password !== confirmPassword) {
-      this.showStatus(statusDiv, "Passwords do not match", "error");
-      return false;
-    } else if (confirmPassword && password === confirmPassword) {
-      this.showStatus(statusDiv, "Passwords match", "success");
-      return true;
-    }
-    return true;
-  }
-
-  async handleSignup(e) {
-    e.preventDefault();
-
-    if (!this.checkDatabaseAvailability()) return;
-
-    if (!this.hospitalData) {
-      this.showNotification("Please verify hospital first", "error");
-      return;
-    }
-
-    const formData = new FormData(e.target);
-    const signupBtn = document.getElementById("signupBtn");
-
-    if (!this.validateSignupForm(formData)) {
-      return;
-    }
-
-    signupBtn.innerHTML =
-      '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
-    signupBtn.disabled = true;
-
-    try {
-      // Update hospital record with password
-      const { error } = await supabase
-        .from("hospitals")
-        .update({
-          password_hash: formData.get("password"), // In production, hash this!
-          admin_email: formData.get("adminEmail"),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("hospital_id", this.hospitalData.hospital_id);
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      this.showNotification(
-        "Hospital account created successfully!",
-        "success"
-      );
-      setTimeout(() => this.showLogin(), 1500);
+      this.displayPatients(data);
     } catch (error) {
-      console.error("Signup error:", error);
-      this.showNotification(
-        "Error creating account. Please try again.",
-        "error"
-      );
-    } finally {
-      signupBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
-      signupBtn.disabled = false;
+      console.error("Error loading patients:", error);
     }
   }
 
-  validateSignupForm(formData) {
-    const password = formData.get("password");
-    const confirmPassword = formData.get("confirmPassword");
-    const adminEmail = formData.get("adminEmail");
-    const termsAccepted = document.getElementById("termsAccepted").checked;
+  displayPatients(patients) {
+    const patientsList = document.getElementById("patientsList");
+    if (!patientsList) return;
 
-    if (password !== confirmPassword) {
-      this.showNotification("Passwords do not match", "error");
-      return false;
-    }
-
-    if (password.length < 8) {
-      this.showNotification(
-        "Password must be at least 8 characters long",
-        "error"
-      );
-      return false;
-    }
-
-    if (!adminEmail) {
-      this.showNotification("Administrator email is required", "error");
-      return false;
-    }
-
-    if (!termsAccepted) {
-      this.showNotification("Please accept the terms of service", "error");
-      return false;
-    }
-
-    return true;
-  }
-
-  // Login Methods
-  async handleLogin(e) {
-    e.preventDefault();
-
-    if (!this.checkDatabaseAvailability()) return;
-
-    const formData = new FormData(e.target);
-    const hospitalId = formData.get("hospitalId").trim().toUpperCase();
-    const password = formData.get("password");
-    const rememberMe = document.getElementById("rememberMe").checked;
-    const loginBtn = document.getElementById("loginBtn");
-
-    if (!hospitalId || !password) {
-      this.showNotification("Please fill in all fields", "error");
+    if (!patients || patients.length === 0) {
+      patientsList.innerHTML = `
+                <div class="empty-state">
+                    <p>No patients found</p>
+                </div>
+            `;
       return;
     }
 
-    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
-    loginBtn.disabled = true;
+    patientsList.innerHTML = patients
+      .map(
+        (patient) => `
+            <div class="patient-card">
+                <h3>${patient.name}</h3>
+                <p><strong>Patient ID:</strong> ${patient.patient_id}</p>
+                <p><strong>Phone:</strong> ${patient.phone}</p>
+                <p><strong>ABHA:</strong> ${
+                  patient.abha_number || "Not provided"
+                }</p>
+            </div>
+        `
+      )
+      .join("");
+  }
 
-    try {
-      const { data, error } = await supabase
-        .from("hospitals")
-        .select("*")
-        .eq("hospital_id", hospitalId)
-        .eq("password_hash", password) // In production, use proper password hashing
-        .single();
-
-      if (error || !data) {
-        throw new Error(
-          "Invalid credentials. Please check your Hospital ID and password."
-        );
-      }
-
-      if (!data.is_verified) {
-        throw new Error(
-          "Hospital account is not verified. Please contact administration."
-        );
-      }
-
-      const sessionData = {
-        hospitalId: hospitalId,
-        hospitalName: data.name,
-        hospitalType: data.hospital_type,
-        loginTime: new Date().toISOString(),
-        rememberMe: rememberMe,
-      };
-
-      if (rememberMe) {
-        localStorage.setItem("hospitalSession", JSON.stringify(sessionData));
-      } else {
-        sessionStorage.setItem("hospitalSession", JSON.stringify(sessionData));
-      }
-
-      this.currentSession = sessionData;
-      this.showNotification("Login successful!", "success");
-      setTimeout(() => this.showDashboard(), 1000);
-    } catch (error) {
-      console.error("Login error:", error);
-      this.showNotification(error.message, "error");
-    } finally {
-      loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
-      loginBtn.disabled = false;
+  // Utility Methods
+  checkDatabaseAvailability() {
+    if (!isSupabaseInitialized) {
+      this.showNotification("Database connection not available", "error");
+      return false;
     }
+    return true;
+  }
+
+  togglePasswordVisibility(inputId, buttonId) {
+    const input = document.getElementById(inputId);
+    const button = document.getElementById(buttonId);
+
+    if (!input || !button) return;
+
+    if (input.type === "password") {
+      input.type = "text";
+      button.textContent = "👁️";
+    } else {
+      input.type = "password";
+      button.textContent = "👁️";
+    }
+  }
+
+  checkPasswordStrength() {
+    const password = document.getElementById("password")?.value || "";
+    const strengthIndicator = document.getElementById("passwordStrength");
+
+    if (!strengthIndicator) return;
+
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+
+    const strengthLabels = ["Weak", "Fair", "Good", "Strong"];
+    const strengthColors = ["#f56565", "#ed8936", "#48bb78", "#48bb78"];
+
+    strengthIndicator.textContent = strengthLabels[strength - 1] || "";
+    strengthIndicator.style.color = strengthColors[strength - 1] || "";
+  }
+
+  validatePasswordMatch() {
+    const password = document.getElementById("password")?.value || "";
+    const confirmPassword =
+      document.getElementById("confirmPassword")?.value || "";
+    const matchIndicator = document.getElementById("passwordMatch");
+
+    if (!matchIndicator) return;
+
+    if (confirmPassword.length === 0) {
+      matchIndicator.textContent = "";
+      return;
+    }
+
+    if (password === confirmPassword) {
+      matchIndicator.textContent = "✓ Passwords match";
+      matchIndicator.style.color = "#48bb78";
+    } else {
+      matchIndicator.textContent = "✗ Passwords do not match";
+      matchIndicator.style.color = "#f56565";
+    }
+  }
+
+  validatePasswordStrength(password) {
+    return (
+      password.length >= 8 &&
+      /[a-z]/.test(password) &&
+      /[A-Z]/.test(password) &&
+      /\d/.test(password) &&
+      /[^a-zA-Z0-9]/.test(password)
+    );
+  }
+
+  async hashPassword(password) {
+    // Simple hash for testing - REPLACE WITH BCRYPT IN PRODUCTION
+    console.warn(
+      "⚠️ Using simple password storage. Implement bcrypt for production!"
+    );
+    return password;
+  }
+
+  async verifyPassword(password, hash) {
+    // Simple comparison for testing - REPLACE WITH BCRYPT IN PRODUCTION
+    console.warn(
+      "⚠️ Using simple password verification. Implement bcrypt for production!"
+    );
+    return password === hash;
+  }
+
+  handleFileSelection(e) {
+    const files = e.target.files;
+    const fileList = document.getElementById("fileList");
+
+    if (!fileList) return;
+
+    fileList.innerHTML = Array.from(files)
+      .map(
+        (file) => `
+            <div class="file-item">
+                <span>${file.name}</span>
+                <span>${(file.size / 1024).toFixed(2)} KB</span>
+            </div>
+        `
+      )
+      .join("");
   }
 
   handleForgotPassword(e) {
     e.preventDefault();
-    const hospitalId = prompt("Enter your Hospital ID:");
-    if (hospitalId) {
-      this.showNotification(
-        `Password reset instructions will be sent to the registered email for Hospital ID: ${hospitalId.toUpperCase()}`,
-        "info"
-      );
-    }
-  }
-
-  // Dashboard Methods
-  async loadDashboardStats() {
-    if (!this.checkDatabaseAvailability()) return;
-
-    try {
-      const today = new Date().toISOString().split("T")[0];
-
-      // Get today's records count
-      const { count: todayCount, error: todayError } = await supabase
-        .from("medical_records")
-        .select("*", { count: "exact", head: true })
-        .eq("hospital_id", this.currentSession.hospitalId)
-        .gte("created_at", today);
-
-      // Get total records count
-      const { count: totalCount, error: totalError } = await supabase
-        .from("medical_records")
-        .select("*", { count: "exact", head: true })
-        .eq("hospital_id", this.currentSession.hospitalId);
-
-      if (!todayError) {
-        document.getElementById("todaysRecords").textContent = todayCount || 0;
-      }
-      if (!totalError) {
-        document.getElementById("totalRecords").textContent = totalCount || 0;
-      }
-    } catch (error) {
-      console.error("Error loading dashboard stats:", error);
-    }
-  }
-
-  // Patient Verification Methods
-  async verifyPatient() {
-    if (!this.checkDatabaseAvailability()) return;
-
-    const patientId = document
-      .getElementById("patientId")
-      .value.trim()
-      .toUpperCase();
-    const patientPhone = document.getElementById("patientPhone").value.trim();
-    const patientName = document.getElementById("patientName").value.trim();
-    const patientIdStatus = document.getElementById("patientIdStatus");
-    const patientPhoneStatus = document.getElementById("patientPhoneStatus");
-    const patientNameStatus = document.getElementById("patientNameStatus");
-    const verifyBtn = document.getElementById("verifyPatientBtn");
-
-    // Clear previous status messages
-    this.showStatus(patientIdStatus, "", "");
-    this.showStatus(patientPhoneStatus, "", "");
-    this.showStatus(patientNameStatus, "", "");
-
-    if (!patientId || !patientPhone || !patientName) {
-      this.showNotification(
-        "Please fill in Patient ID, Phone, and Name",
-        "error"
-      );
-      return;
-    }
-
-    verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
-    verifyBtn.disabled = true;
-
-    try {
-      // Verify patient exists with matching ID
-      const { data: patientData, error: patientError } = await supabase
-        .from("patients")
-        .select("*")
-        .eq("patient_id", patientId)
-        .eq("is_active", true)
-        .single();
-
-      if (patientError || !patientData) {
-        this.showStatus(
-          patientIdStatus,
-          "Patient ID not found in our records",
-          "error"
-        );
-        return;
-      }
-
-      // Verify phone number matches
-      if (patientData.phone !== patientPhone) {
-        this.showStatus(
-          patientPhoneStatus,
-          "Phone number does not match our records",
-          "error"
-        );
-        return;
-      }
-
-      // Verify name matches (case insensitive)
-      if (patientData.name.toLowerCase() !== patientName.toLowerCase()) {
-        this.showStatus(
-          patientNameStatus,
-          "Name does not match our records",
-          "error"
-        );
-        return;
-      }
-
-      // All verification passed
-      this.verifiedPatient = patientData;
-      this.showStatus(
-        patientIdStatus,
-        "Patient verified successfully!",
-        "success"
-      );
-      this.showStatus(patientPhoneStatus, "Phone verified!", "success");
-      this.showStatus(patientNameStatus, "Name verified!", "success");
-      this.displayVerifiedPatient(patientData);
-      this.showMedicalDetailsForm();
-
-      verifyBtn.innerHTML = '<i class="fas fa-check"></i> Verified';
-      verifyBtn.classList.add("success");
-    } catch (error) {
-      console.error("Patient verification error:", error);
-      this.showNotification(
-        "Error verifying patient. Please try again.",
-        "error"
-      );
-    } finally {
-      verifyBtn.disabled = false;
-    }
-  }
-
-  autoVerifyPatient() {
-    const patientId = document.getElementById("patientId").value.trim();
-    const patientPhone = document.getElementById("patientPhone").value.trim();
-    const patientName = document.getElementById("patientName").value.trim();
-
-    if (
-      patientId.length >= 6 &&
-      patientPhone.length >= 10 &&
-      patientName.length >= 3
-    ) {
-      clearTimeout(this.autoSearchTimeout);
-      this.autoSearchTimeout = setTimeout(() => {
-        this.verifyPatient();
-      }, 1500);
-    }
-  }
-
-  displayVerifiedPatient(patient) {
-    // Calculate age
-    const age = patient.date_of_birth
-      ? new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear()
-      : "N/A";
-
-    document.getElementById("verifiedPatientName").textContent = patient.name;
-    document.getElementById("verifiedPatientPhone").textContent = patient.phone;
-    document.getElementById("verifiedPatientEmail").textContent =
-      patient.email || "N/A";
-    document.getElementById("verifiedPatientAge").textContent =
-      age + (age !== "N/A" ? " years" : "");
-    document.getElementById("verifiedPatientGender").textContent =
-      patient.gender || "N/A";
-    document.getElementById("verifiedPatientBloodGroup").textContent =
-      patient.blood_group || "N/A";
-
-    document.getElementById("patientDetailsCard").classList.remove("hidden");
-  }
-
-  showMedicalDetailsForm() {
-    const medicalDetailsCard = document.getElementById("medicalDetailsCard");
-    if (medicalDetailsCard) {
-      medicalDetailsCard.style.display = "block";
-      medicalDetailsCard.scrollIntoView({ behavior: "smooth" });
-    }
-  }
-
-  async handleAddRecord(e) {
-    e.preventDefault();
-
-    if (!this.checkDatabaseAvailability()) return;
-
-    if (!this.verifiedPatient) {
-      this.showNotification("Please verify patient information first", "error");
-      return;
-    }
-
-    if (!this.currentSession) {
-      this.showNotification("Please log in first", "error");
-      return;
-    }
-
-    const formData = new FormData(e.target);
-    const submitBtn = document.getElementById("submitRecord");
-
-    if (!this.validateRecordForm(formData)) {
-      return;
-    }
-
-    submitBtn.innerHTML =
-      '<i class="fas fa-spinner fa-spin"></i> Adding Record...';
-    submitBtn.disabled = true;
-
-    try {
-      // Generate unique record number
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).substr(2, 5).toUpperCase();
-      const recordNumber = `MED_${timestamp}_${random}`;
-
-      // Process attachments
-      const attachmentFiles = Array.from(
-        document.getElementById("attachments").files
-      );
-      const attachmentNames = attachmentFiles.map((file) => file.name);
-
-      // Calculate can_edit_until (1 hour from now)
-      const canEditUntil = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-
-      const recordData = {
-        record_number: recordNumber,
-        patient_id: this.verifiedPatient.patient_id,
-        hospital_id: this.currentSession.hospitalId,
-        record_type: formData.get("recordType"),
-        doctor_name: formData.get("doctorName"),
-        doctor_specialization: formData.get("doctorSpecialization") || null,
-        diagnosis: formData.get("diagnosis"),
-        treatment: formData.get("treatment") || null,
-        medications: formData.get("medications") || null,
-        follow_up_date: formData.get("followUpDate") || null,
-        severity: formData.get("severity"),
-        notes: formData.get("notes") || null,
-        attachments: attachmentNames.length > 0 ? attachmentNames : null,
-        can_edit_until: canEditUntil,
-        is_editable: true,
-      };
-
-      console.log("Attempting to insert record:", recordData);
-
-      const { data, error } = await supabase
-        .from("medical_records")
-        .insert([recordData])
-        .select();
-
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
-      }
-
-      console.log("Record inserted successfully:", data);
-      this.showNotification("Medical record added successfully!", "success");
-
-      // Reset form and clear verification
-      this.resetMedicalForm(e.target);
-      await this.loadDashboardStats();
-
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (error) {
-      console.error("Add record error details:", error);
-      this.handleDatabaseError(error);
-    } finally {
-      submitBtn.innerHTML = '<i class="fas fa-save"></i> Add Medical Record';
-      submitBtn.disabled = false;
-    }
-  }
-
-  handleDatabaseError(error) {
-    let errorMessage = "Error adding record. Please try again.";
-
-    if (error.message) {
-      if (error.message.includes("duplicate key")) {
-        errorMessage = "Record with this number already exists.";
-      } else if (
-        error.message.includes("foreign key") ||
-        error.message.includes("violates foreign key constraint")
-      ) {
-        errorMessage =
-          "Invalid patient or hospital reference. Please verify patient again.";
-      } else if (
-        error.message.includes("not null") ||
-        error.message.includes("null value")
-      ) {
-        errorMessage = "Please fill in all required fields.";
-      } else if (
-        error.message.includes("network") ||
-        error.message.includes("fetch")
-      ) {
-        errorMessage =
-          "Network error. Please check your connection and try again.";
-      } else if (error.message.includes("check constraint")) {
-        errorMessage = "Invalid data format. Please check your inputs.";
-      } else {
-        errorMessage = `Database error: ${error.message}`;
-      }
-    }
-
-    this.showNotification(errorMessage, "error");
-  }
-
-  validateRecordForm(formData) {
-    const requiredFields = {
-      recordType: "Record Type",
-      severity: "Severity Level",
-      doctorName: "Doctor Name",
-      diagnosis: "Diagnosis",
-    };
-
-    for (const [field, label] of Object.entries(requiredFields)) {
-      const value = formData.get(field);
-      if (!value || !value.trim()) {
-        this.showNotification(`Please fill in the ${label} field`, "error");
-        console.error(`Missing required field: ${field}`);
-        return false;
-      }
-    }
-
-    // Check if patient is verified
-    if (!this.verifiedPatient) {
-      this.showNotification("Please verify patient information first", "error");
-      return false;
-    }
-
-    // Check if user is logged in
-    if (!this.currentSession) {
-      this.showNotification("Please log in first", "error");
-      return false;
-    }
-
-    return true;
-  }
-
-  resetMedicalForm(form) {
-    // Reset form
-    form.reset();
-    document.getElementById("filesList").innerHTML = "";
-    document.getElementById("patientDetailsCard").classList.add("hidden");
-    document.getElementById("medicalDetailsCard").style.display = "none";
-
-    // Reset patient verification fields
-    document.getElementById("patientId").value = "";
-    document.getElementById("patientPhone").value = "";
-    document.getElementById("patientName").value = "";
-
-    // Clear status messages
-    document.getElementById("patientIdStatus").textContent = "";
-    document.getElementById("patientPhoneStatus").textContent = "";
-    document.getElementById("patientNameStatus").textContent = "";
-
-    // Reset verify button
-    const verifyBtn = document.getElementById("verifyPatientBtn");
-    verifyBtn.innerHTML = '<i class="fas fa-search"></i> Verify Patient';
-    verifyBtn.classList.remove("success");
-    verifyBtn.disabled = false;
-
-    this.verifiedPatient = null;
-  }
-
-  handleFileSelection(e) {
-    const files = Array.from(e.target.files);
-    const filesList = document.getElementById("filesList");
-
-    filesList.innerHTML = "";
-
-    files.forEach((file, index) => {
-      const fileItem = document.createElement("div");
-      fileItem.className = "file-item";
-      fileItem.innerHTML = `
-                <div class="file-info">
-                    <i class="fas fa-file"></i>
-                    <span>${file.name}</span>
-                    <span class="file-size">(${(
-                      file.size /
-                      1024 /
-                      1024
-                    ).toFixed(2)} MB)</span>
-                </div>
-                <button type="button" class="remove-file" onclick="this.parentElement.remove(); app.updateFileInput();">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-      filesList.appendChild(fileItem);
-    });
-  }
-
-  updateFileInput() {
-    // Reset file input when files are removed
-    const fileInput = document.getElementById("attachments");
-    const filesList = document.getElementById("filesList");
-
-    if (filesList.children.length === 0) {
-      fileInput.value = "";
-    }
-  }
-
-  // Utility Methods
-  togglePasswordVisibility(inputId, toggleId) {
-    const input = document.getElementById(inputId);
-    const toggle = document.getElementById(toggleId);
-
-    if (input.type === "password") {
-      input.type = "text";
-      toggle.innerHTML = '<i class="fas fa-eye-slash"></i>';
-    } else {
-      input.type = "password";
-      toggle.innerHTML = '<i class="fas fa-eye"></i>';
-    }
-  }
-
-  showStatus(element, message, type) {
-    element.textContent = message;
-    element.className = `status-message ${type}`;
-  }
-
-  showNotification(message, type) {
-    // Remove existing notification
-    const existingNotification = document.querySelector(".notification");
-    if (existingNotification) {
-      existingNotification.remove();
-    }
-
-    const notification = document.createElement("div");
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-            <div class="notification-content">
-                <i class="fas fa-${
-                  type === "success"
-                    ? "check-circle"
-                    : type === "error"
-                    ? "exclamation-circle"
-                    : "info-circle"
-                }"></i>
-                <span>${message}</span>
-            </div>
-            <button class="notification-close" onclick="this.parentElement.remove()">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-
-    document.body.appendChild(notification);
-
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      if (notification.parentElement) {
-        notification.remove();
-      }
-    }, 5000);
+    this.showNotification("Password reset feature coming soon!", "info");
   }
 
   handleLogout() {
     localStorage.removeItem("hospitalSession");
     sessionStorage.removeItem("hospitalSession");
     this.currentSession = null;
+    this.verifiedPatient = null;
     this.showNotification("Logged out successfully", "success");
-    setTimeout(() => this.showLogin(), 1000);
+    this.showLogin();
+  }
+
+  resetForms() {
+    const forms = document.querySelectorAll("form");
+    forms.forEach((form) => form.reset());
+  }
+
+  showNotification(message, type = "info") {
+    const notification = document.createElement("div");
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.classList.add("show");
+    }, 100);
+
+    setTimeout(() => {
+      notification.classList.remove("show");
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
   }
 }
+
+// Initialize app when DOM is ready
+let app;
+document.addEventListener("DOMContentLoaded", () => {
+  app = new MediSecureApp();
+});
+
+// Make functions globally accessible for onclick handlers
+window.switchDashboardView = function (view) {
+  if (app) app.switchDashboardView(view);
+};
+
+window.showLogin = function () {
+  if (app) app.showLogin();
+};
+
+window.showSignup = function () {
+  if (app) app.showSignup();
+};
